@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horos Inmobiliaria | Detalle del Proyecto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+    <header class="bg-white shadow-md py-4 px-6 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <img src="img/horos-inmobiliaria.png" alt="Logo" class="h-12">
+            <span class="text-sm text-gray-500 pl-3 border-l-2 border-amber-700">Ficha Técnica</span>
+        </div>
+        <a href="./index.html" class="text-slate-900 hover:text-amber-700 font-medium"><i class="bi bi-arrow-left"></i> Volver al inicio</a>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-12 px-6 grid grid-cols-1 lg:grid-cols-3 gap-8" id="detalle-proyecto">
+        </main>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Lógica exclusiva para leer la URL y pintar este proyecto específico
+        document.addEventListener("DOMContentLoaded", () => {
+            // 1. Obtener el ID desde la URL (ej: proyecto.html?id=2)
+            const params = new URLSearchParams(window.location.search);
+            const idProyecto = parseInt(params.get("id"));
+
+            // 2. Buscar el proyecto en nuestra base de datos (Array que está en main.js)
+            const proyecto = proyectos.find(p => p.id === idProyecto);
+
+            const contenedor = document.getElementById("detalle-proyecto");
+
+            if (!proyecto) {
+                contenedor.innerHTML = `<div class="col-span-full text-center py-20 text-xl font-bold text-gray-500">Proyecto no encontrado.</div>`;
+                return;
+            }
+
+            // 3. Modificar el título de la pestaña del navegador
+            document.title = `${proyecto.titulo} | Horos Inmobiliaria`;
+
+            // 4. Pintar la vista de detalle
+            contenedor.innerHTML = `
+                <div class="lg:col-span-2 flex flex-col gap-6">
+                    <h2 class="text-3xl font-bold text-slate-900">${proyecto.titulo}</h2>
+                    <p class="text-amber-700 font-semibold uppercase tracking-wider text-sm">${proyecto.tipo} en ${proyecto.ubicacion}</p>
+                    
+                    <div class="w-full h-[450px] bg-slate-200 rounded-lg overflow-hidden shadow-sm">
+                        <img src="${proyecto.imagen}" alt="${proyecto.titulo}" class="w-full h-full object-cover">
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-100">
+                        <h3 class="text-xl font-bold mb-4 text-slate-900">Características Principales</h3>
+                        <div class="grid grid-cols-3 gap-4 text-center text-slate-600 bg-slate-50 p-4 rounded-md">
+                            <div>
+                                <i class="bi bi-grid-3x3-gap text-xl text-amber-700 block mb-1"></i>
+                                <span class="font-bold block">${proyecto.metros} m²</span> Area Total
+                            </div>
+                            <div>
+                                <i class="bi bi-door-closed text-xl text-amber-700 block mb-1"></i>
+                                <span class="font-bold block">${proyecto.cuartos}</span> Dormitorios
+                            </div>
+                            <div>
+                                <i class="bi bi-droplet text-xl text-amber-700 block mb-1"></i>
+                                <span class="font-bold block">${proyecto.banos}</span> Baños
+                            </div>
+                        </div>
+                        <p class="mt-6 text-slate-600 leading-relaxed">
+                            Contamos con acabados de primera calidad, excelente iluminación natural y una ubicación privilegiada dentro de las zonas más exclusivas de Trujillo. Ideal para inversión o vivienda familiar.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-6">
+                    <div class="bg-neutral-900 text-white p-6 rounded-lg shadow-md text-center">
+                        <p class="text-gray-400 text-sm font-medium">Precio del Inmueble</p>
+                        <h3 class="text-3xl font-bold mt-1 text-amber-500">S/. ${proyecto.precio.toLocaleString('es-PE')}</h3>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-100 flex flex-col gap-4">
+                        <h3 class="text-lg font-bold text-slate-900">Simulador de Crédito</h3>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 block mb-1">Precio Fijo (S/.)</label>
+                            <input type="number" id="precio-detalle" value="${proyecto.precio}" disabled class="w-full bg-gray-50 border border-gray-200 rounded-md py-2 px-3 text-gray-500 font-bold focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 block mb-1">Inicial Recomendada (10%)</label>
+                            <input type="number" id="inicial-detalle" value="${proyecto.precio * 0.1}" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-amber-700 focus:outline-none">
+                        </div>
+                        <button onclick="calcularCuotaDetalle(${proyecto.precio})" class="w-full bg-amber-700 text-white font-bold py-2.5 rounded-md hover:bg-amber-800 transition-colors">Simular Cuota</button>
+                        <div class="bg-slate-50 p-3 rounded-md text-center mt-2 border border-slate-100">
+                            <span class="text-xs text-gray-500 block">Mensualidad estimada a 20 años (5% Tasa):</span>
+                            <span id="resultado-detalle" class="text-xl font-bold text-slate-900">S/. 0.00</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Correr cálculo inicial automático
+            calcularCuotaDetalle(proyecto.precio);
+        });
+
+        // Función matemática rápida para la ficha técnica
+        function calcularCuotaDetalle(precioTotal) {
+            const inicial = parseFloat(document.getElementById("inicial-detalle").value) || 0;
+            const monto = precioTotal - inicial;
+            const tasaMensual = (5 / 100) / 12; // 5% anual ficticio estándar
+            const meses = 20 * 12; // 20 años
+
+            let cuota = (monto * tasaMensual) / (1 - Math.pow(1 + tasaMensual, -meses));
+            document.getElementById("resultado-detalle").innerText = `S/. ${cuota.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+        }
+    </script>
+    <script src="js/calculadora.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
