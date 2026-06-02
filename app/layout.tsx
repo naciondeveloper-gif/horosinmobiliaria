@@ -8,7 +8,7 @@ import {FaExternalLinkAlt} from 'react-icons/fa';
 
 export const metadata: Metadata = {
   title: 'Horos Inmobiliaria | Venta y Alquiler',
-  description: 'Proyectos exclusivos y departamentos de estreno en Trujillo',
+  description: 'Venta y alquiler de inmuebles',
 };
 
 const roboto = Roboto({
