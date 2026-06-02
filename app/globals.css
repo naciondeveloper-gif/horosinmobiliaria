@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --horosblue: #07A6C9;
+  --btn-primary: #C96206;
+  --btn-primary-hover: #f47d16;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-horosblue: var(--horosblue);
+  --color-btn-primary: var(--btn-primary);
+  --color-btn-primary-hover: var(--btn-primary-hover)
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+@media print {
+  header, 
+  nav, 
+  footer, 
+  .boton-whatsapp-flotante, 
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background-color: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+}
