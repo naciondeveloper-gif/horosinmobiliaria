@@ -1,20 +1,31 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Link from 'next/link';
 import Image from 'next/image';
-import {Roboto} from 'next/font/google';
-import { FaMailBulk, FaPhone } from 'react-icons/fa';
-import {FaExternalLinkAlt} from 'react-icons/fa';
+import { DM_Sans, Montserrat } from 'next/font/google';
+import NavBar from '@/components/NavBar';
+import {
+  FaPhone, FaEnvelope, FaExternalLinkAlt,
+  FaMapMarkerAlt, FaInstagram, FaFacebook,
+} from 'react-icons/fa';
 
 export const metadata: Metadata = {
-  title: 'Horos Inmobiliaria | Venta y Alquiler',
-  description: 'Venta y alquiler de inmuebles',
+  title: 'Horos Inmobiliaria | Venta y Alquiler de Inmuebles en Trujillo',
+  description: 'Encuentra tu hogar ideal con Horos Inmobiliaria. Venta y alquiler de departamentos, casas y proyectos en Trujillo, Perú.',
 };
 
-const roboto = Roboto({
+const montserrat = Montserrat({
   subsets: ['latin'],
-  variable: '--font-roboto',
-  weight: ['400', '500', '700', '900'],
+  variable: '--font-montserrat',
+  weight: ['400', '500', '600', '700', '800', '900'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+});
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  variable: '--font-dmsans',
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
 });
 
 export default function RootLayout({
@@ -23,65 +34,130 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${roboto.variable}`}>
-      <body className="text-slate-700 antialiased flex flex-col min-h-screen">
-        <nav className="print:hidden bg-white/80 shadow-sm border-b border-slate-100 sticky top-0 z-50 py-4 px-6 flex justify-between items-center backdrop-blur-sm">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/img/horos-inmobiliaria.png" alt="Horos Logo" className="h-12" />
-          </Link>
-          <div className="hidden md:flex items-center gap-6 font-medium text-slate-600 text-sm">
-            <Link href="/" className="hover:text-horosblue transition-colors">Inicio</Link>
-            <Link href="/nosotros" className="hover:text-horosblue transition-colors">Nosotros</Link>
-            <Link href="/contacto" className="hover:text-horosblue transition-colors">Contacto</Link>
-            <Link href="/contacto" className="bg-btn-primary text-white px-4 py-2 rounded-sm text-sm font-bold hover:bg-btn-primary-hover focus:outline-none transition-all hover:animate-pulse duration-400 ">
-              ¡Cotiza Ahora!
-            </Link>
+    <html lang="es" className={`${montserrat.variable} ${dmSans.variable}`}>
+      <body className="antialiased flex flex-col min-h-screen bg-ink-50">
+ 
+        <NavBar />
+      <main className="flex-1">{children}</main>
+
+        {/* ── Footer ──────────────────────────────────── */}
+        <footer className="print:hidden bg-ink-900 text-white mt-auto">
+
+          {/* Franja superior */}
+          <div className="border-b border-white/8">
+            <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+
+              {/* Brand */}
+              <div className="lg:col-span-1">
+                <Image
+                  src="/img/horos-inmobiliaria.png"
+                  alt="Horos Inmobiliaria"
+                  width={160}
+                  height={44}
+                  className="h-10 w-auto brightness-0 invert mb-4 opacity-90"
+                />
+                <p className="text-ink-300 text-sm leading-relaxed">
+                  Tu aliado de confianza en la búsqueda del inmueble ideal en
+                  Trujillo y La Libertad.
+                </p>
+              </div>
+
+              {/* Contacto */}
+              <div>
+                <h4 className="text-white font-display font-semibold text-sm uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <span className="w-5 h-px bg-horos-400 inline-block" />
+                  Contacto
+                </h4>
+                <ul className="space-y-3 text-sm">
+                  <li>
+                    <a
+                      href="tel:+51044269134"
+                      className="flex items-center gap-3 text-ink-300 hover:text-horos-300 transition-colors group"
+                    >
+                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-white/8 group-hover:bg-horos-500/20 transition-colors shrink-0">
+                        <FaPhone size={11} />
+                      </span>
+                      +51 (044) 269 134
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="tel:+51971000482"
+                      className="flex items-center gap-3 text-ink-300 hover:text-horos-300 transition-colors group"
+                    >
+                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-white/8 group-hover:bg-horos-500/20 transition-colors shrink-0">
+                        <FaPhone size={11} />
+                      </span>
+                      +51 971 000 482
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="mailto:info@horosinmobiliaria.com"
+                      className="flex items-center gap-3 text-ink-300 hover:text-horos-300 transition-colors group"
+                    >
+                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-white/8 group-hover:bg-horos-500/20 transition-colors shrink-0">
+                        <FaEnvelope size={11} />
+                      </span>
+                      info@horosinmobiliaria.com
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Enlaces de interés */}
+              <div>
+                <h4 className="text-white font-display font-semibold text-sm uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <span className="w-5 h-px bg-horos-400 inline-block" />
+                  Interés
+                </h4>
+                <ul className="space-y-2.5 text-sm">
+                  {[
+                    { href: 'https://www.mivivienda.com.pe/', label: 'Fondo MIVIVIENDA' },
+                    { href: 'https://www.gob.pe/vivienda', label: 'Ministerio de Vivienda' },
+                    { href: 'https://www.gob.pe/sunarp', label: 'SUNARP' },
+                  ].map((item) => (
+                    <li key={item.href}>
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-ink-300 hover:text-horos-300 transition-colors"
+                      >
+                        <FaExternalLinkAlt size={10} className="shrink-0 opacity-60" />
+                        {item.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Asesores */}
+              <div>
+                <h4 className="text-white font-display font-semibold text-sm uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <span className="w-5 h-px bg-horos-400 inline-block" />
+                  Asesores
+                </h4>
+                <p className="text-ink-400 text-sm mb-4 leading-relaxed">
+                  Acceso exclusivo para asesores comerciales autorizados.
+                </p>
+                <a
+                  href="/login"
+                  className="inline-flex items-center gap-2 border border-horos-500/40 text-horos-300 hover:bg-horos-500/10 hover:border-horos-400 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+                >
+                  Ingresar al Sistema
+                </a>
+              </div>
+            </div>
           </div>
-        </nav>
-        <main className="flex-1">{children}</main>
-        <footer className="print:hidden bg-zinc-100 text-white mt-auto shadow-inner">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-20 pt-10 pb-4 px-6">
-              <div>
-                <Image src="/img/horos-inmobiliaria.png" alt="Horos Logo" width={240} height={40} className="mb-4 p-4" />
-              </div>
-              <div>
-                  <div className="mb-4 border-b border-slate-300 pb-2">
-                      <div className="text-xs font-bold text-horosblue uppercase tracking-wider flex items-center gap-2 mb-2">
-                        <FaPhone />
-                        <h3>Llámanos</h3>
-                      </div>
-                      <p className="text-slate-700 text-sm font-medium mb-2">+51 (044) 269134</p>
-                      <p className="text-slate-700 text-sm font-medium">+51 971 000 482</p>
-                  </div>
-                  <div>
-                      <div className="text-xs font-bold text-horosblue uppercase tracking-wider flex items-center gap-2 mb-2">
-                        <FaMailBulk />
-                        <h3>Escríbenos</h3>
-                      </div>
-                      <p className="text-slate-700 text-sm font-medium">info@horosinmobiliaria.com</p>
-                  </div>
-              </div>
-              <div>
-                  <h3 className="text-xs font-bold text-horosblue uppercase tracking-wider mb-4">Enlaces de Interés</h3>
-                  <ul className="space-y-2 text-slate-700 text-sm">
-                      <li><a className='flex items-center gap-2 hover:text-horosblue transition-colors' href="https://www.mivivienda.com.pe/" target="_blank"><FaExternalLinkAlt />Fondo MIVIVIENDA</a></li>
-                      <li><a className='flex items-center gap-2 hover:text-horosblue transition-colors' href="https://www.gob.pe/vivienda" target="_blank"><FaExternalLinkAlt />Ministerio de Vivienda</a></li>
-                      <li><a className='flex items-center gap-2 hover:text-horosblue transition-colors' href="https://www.gob.pe/sunarp" target="_blank"><FaExternalLinkAlt />Registros Públicos (SUNARP)</a></li>
-                  </ul>
-              </div>
-              <div>
-                  <h3 className="text-md font-bold text-horosblue uppercase tracking-wider mb-4">Acceso Asesores</h3>
-                  <p className="text-slate-700 text-sm mb-3">Este ingreso es de uso exclusivo para asesores comerciales autorizados.</p>
-                  <a href="./login" className="inline-block bg-transparent text-horosblue border border-horos-blue/30 px-4 py-1.5 rounded text-sm font-medium hover:bg-blue-400/10 transition-colors">
-                    Ingresar al Sistema
-                  </a>
-              </div>
+
+          {/* Barra inferior */}
+          <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-ink-500">
+            <p>&copy; {new Date().getFullYear()} Horos Inmobiliaria. Todos los derechos reservados.</p>
+            <p>RUC: 20560049391 · HOROS INMOBILIARIA S.A.C.</p>
           </div>
-          <div className="border-t border-slate-300 py-4 px-6 text-center text-xs text-slate-500 max-w-7xl mx-auto w-full flex flex-col sm:flex-row justify-between gap-2">
-              <p>&copy; 2026 Horos Inmobiliaria. Todos los derechos reservados.</p>
-              <p>Razón Social: HOROS INMOBILIARIA S.A.C. | RUC: 20560049391</p>
-          </div>
-      </footer>
+        </footer>
+
       </body>
     </html>
   );

@@ -81,10 +81,11 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
             </div>
           </div>
         </div>
-        <div className="bg-slate-900 text-white p-6 rounded-lg shadow-sm flex flex-col gap-2">
-          <h4 className="font-bold text-sm text-amber-500 flex gap-2 items-center"><FaClock /> Horario de Atención</h4>
-          <p className="text-xs text-slate-300">Lunes a Viernes: 9:00 AM - 5:30 PM</p>
-          <p className="text-xs text-slate-300">Sábados: 9:00 AM - 1:00 PM</p>
+        <div className="z-0 relative text-white bg-[#C9B606] font-bold p-6 rounded-lg shadow-md  flex flex-col gap-2 hover:scale-105 transition-transform">
+          <FaClock className='w-full h-full absolute top-0 left-0 -z-20 text-gray-100/20'></FaClock>
+          <h4 className="font-bold text-sm text-[#2A6874] flex gap-2 items-center"> Horario de Atención</h4>
+          <p className="text-xs">Lunes a Viernes: 9:00 AM - 5:30 PM</p>
+          <p className="text-xs">Sábados: 9:00 AM - 1:00 PM</p>
         </div>
       </div>
       <div className="bg-white p-8 rounded-lg shadow-sm border border-slate-100 lg:col-span-2 flex flex-col justify-between">
@@ -120,8 +121,8 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold text-gray-600">Mensaje o Comentario</label>
-            <textarea name="mensaje" value={formData.mensaje} onChange={handleChange} rows={4} required placeholder="Escribe aquí tus dudas..."
+            <label className="text-xs font-bold text-gray-600">Mensaje</label>
+            <textarea name="mensaje" value={formData.mensaje} onChange={handleChange} rows={4} placeholder="Escribe aquí tus dudas..."
               className="border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-600 resize-none"></textarea>
           </div>
           <div className="flex justify-center">
@@ -132,7 +133,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         </form>
         {status === 'success' && (
           <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-center rounded-md text-sm font-medium">
-            ¡Mensaje enviado con éxito a través de GoDaddy! Un asesor se comunicará contigo.
+            ¡Gracias por comunicarte con nosotros!
           </div>
         )}
 

@@ -1,41 +1,289 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --horosblue: #07A6C9;
-  --btn-primary: #C96206;
-  --btn-primary-hover: #f47d16;
+@theme {
+  --font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
+  --font-body:    var(--font-dmsans), 'DM Sans', system-ui, sans-serif;
+  --font-sans:    var(--font-dmsans), 'DM Sans', system-ui, sans-serif;
+
+  /* ── Paleta Horos (base #07A6C9) ─────────── */
+  --color-horos-50:  #E8F8FC;
+  --color-horos-100: #C3EEFA;
+  --color-horos-200: #86D9F1;
+  --color-horos-300: #3CBFE5;
+  --color-horos-400: #09B0D4;
+  --color-horos-500: #07A6C9;
+  --color-horos-600: #0685A0;
+  --color-horos-700: #056580;
+  --color-horos-800: #044A5C;
+  --color-horos-900: #02303C;
+  --color-horos-950: #011920;
+
+  /* ── Acento cálido (CTAs) ────────────────── */
+  --color-accent-50:  #FEF5E8;
+  --color-accent-100: #FDE3B8;
+  --color-accent-200: #FBCA7D;
+  --color-accent-300: #F8AE45;
+  --color-accent-400: #F59620;
+  --color-accent-500: #E27D0C;
+  --color-accent-600: #C96206;
+  --color-accent-700: #A34A05;
+  --color-accent-800: #7C3504;
+  --color-accent-900: #552403;
+
+  /* ── Neutrales tintados (cool ink) ──────── */
+  --color-ink-50:  #F3F8FA;
+  --color-ink-100: #E0EBF1;
+  --color-ink-200: #BDD4DF;
+  --color-ink-300: #8AAABB;
+  --color-ink-400: #5A7E8E;
+  --color-ink-500: #3B5F70;
+  --color-ink-600: #2B4A5C;
+  --color-ink-700: #1E3646;
+  --color-ink-800: #142433;
+  --color-ink-900: #0C1820;
+  --color-ink-950: #060E14;
+
+  /* ── Compatibilidad legado ───────────────── */
+  --color-horosblue:         #07A6C9;
+  --color-btn-primary:       #C96206;
+  --color-btn-primary-hover: #F59620;
+
+  /* ── Animaciones ─────────────────────────── */
+  --animate-fade-in:     fadeIn     0.45s ease-out both;
+  --animate-slide-up:    slideUp    0.5s  ease-out both;
+  --animate-slide-down:  slideDown  0.4s  ease-out both;
+  --animate-slide-left:  slideLeft  0.45s ease-out both;
+  --animate-slide-right: slideRight 0.45s ease-out both;
+  --animate-scale-in:    scaleIn    0.3s  ease-out both;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-horosblue: var(--horosblue);
-  --color-btn-primary: var(--btn-primary);
-  --color-btn-primary-hover: var(--btn-primary-hover)
+/* ── Keyframes ──────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideLeft {
+  from { opacity: 0; transform: translateX(18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(1);    opacity: 0.8; }
+  50%       { transform: scale(1.12); opacity: 0.4; }
+}
+
+@keyframes spin-brand {
+  to { transform: rotate(360deg); }
+}
+@layer utilities {
+  .animate-delay-75  { animation-delay:  75ms; }
+  .animate-delay-100 { animation-delay: 100ms; }
+  .animate-delay-150 { animation-delay: 150ms; }
+  .animate-delay-200 { animation-delay: 200ms; }
+  .animate-delay-300 { animation-delay: 300ms; }
+  .animate-delay-400 { animation-delay: 400ms; }
+  .animate-delay-500 { animation-delay: 500ms; }
+  .animate-delay-700 { animation-delay: 700ms; }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-ink-100) 25%,
+      var(--color-ink-50)  50%,
+      var(--color-ink-100) 75%
+    );
+    background-size: 600px 100%;
+    animation: shimmer 1.6s infinite linear;
+  }
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--color-ink-700);
+    background-color: var(--color-ink-50);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.65;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    color: var(--color-ink-900);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--color-ink-50); }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-horos-300);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-horos-500); }
+
+  /* Focus visible global */
+  :focus-visible {
+    outline: 2px solid var(--color-horos-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--color-accent-500), var(--color-accent-600));
+    color: #ffffff;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.875rem;
+    padding: 0.625rem 1.5rem;
+    border-radius: 9999px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--color-accent-600) 35%, transparent);
+  }
+  .btn-primary:hover {
+    background: linear-gradient(135deg, var(--color-accent-400), var(--color-accent-500));
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--color-accent-500) 45%, transparent);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active {
+    transform: scale(0.97);
+  }
+
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1.5px solid var(--color-horos-400);
+    color: var(--color-horos-600);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: 9999px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .btn-outline:hover {
+    background: var(--color-horos-50);
+    border-color: var(--color-horos-500);
+    color: var(--color-horos-700);
+  }
+
+  .card {
+    background: #ffffff;
+    border: 1px solid var(--color-ink-100);
+    border-radius: 1rem;
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--color-ink-900) 6%, transparent);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .card:hover {
+    box-shadow: 0 6px 24px color-mix(in srgb, var(--color-ink-900) 10%, transparent);
+    transform: translateY(-2px);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+  }
+  .badge-teal {
+    background: var(--color-horos-100);
+    color: var(--color-horos-700);
+  }
+  .badge-accent {
+    background: var(--color-accent-100);
+    color: var(--color-accent-700);
+  }
+  .badge-ink {
+    background: var(--color-ink-900);
+    color: #ffffff;
+  }
+
+  /* Spinner de marca */
+  .spinner-brand {
+    position: relative;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+  }
+  .spinner-brand::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 3px solid var(--color-horos-100);
+    border-radius: 50%;
+  }
+  .spinner-brand::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 3px solid transparent;
+    border-top-color: var(--color-horos-500);
+    border-radius: 50%;
+    animation: spin-brand 0.75s linear infinite;
   }
 }
 
 @media print {
-  header, 
-  nav, 
-  footer, 
-  .boton-whatsapp-flotante, 
+  header, nav, footer,
+  .boton-whatsapp-flotante,
   .no-print {
     display: none !important;
   }
-
   body {
-    background-color: white !important;
+    background: white !important;
     color: black !important;
     font-size: 12pt;
   }

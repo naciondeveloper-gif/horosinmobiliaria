@@ -66,6 +66,16 @@ export default function CatalogoPage() {
     return Array.from(new Set(listas)).sort((a, b) => a - b);
   }, [proyectos]);
 
+  const slugify = (text: string) => {
+    return text
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  };
+
   const calcularCuota = () => {
     const montoFinanciar = calcPrecio - calcInicial;
     const tasaMensual = (calcTasa / 100) / 12;
@@ -82,7 +92,7 @@ export default function CatalogoPage() {
       : montoFinanciar / nMeses;
 
     setMontoFinanciarStr(`S/. ${montoFinanciar.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`);
-    setCuotaFinal(`S/. ${cuota.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`);
+    setCuotaFinal(`S/. ${cuota.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
   };
 
   const handleImprimir = () => {
@@ -125,17 +135,34 @@ export default function CatalogoPage() {
           ))}
         </select>
       </div>
-
-      {/* Grid del layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 print:hidden">
           {loading ? (
-            <div className="text-center py-20 text-gray-400 font-medium text-sm">
-              Cargando las propiedades de Horos...
+            <div className="flex flex-col items-center justify-center py-24 gap-5 animate-fade-in">
+              <div className="spinner-brand" />
+              <div className="text-center">
+                <p className="text-ink-700 font-semibold text-sm">Cargando propiedades</p>
+                <p className="text-ink-400 text-xs mt-0.5">Un momento por favor...</p>
+              </div>
+              {/* Skeleton cards */}
+              <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                {[1,2,3,4].map(n => (
+                  <div key={n} className="rounded-xl overflow-hidden border border-ink-100 bg-white" style={{animationDelay: `${n * 80}ms`}}>
+                    <div className="skeleton h-48 w-full" />
+                    <div className="p-4 flex flex-col gap-2">
+                      <div className="skeleton h-4 w-3/4 rounded-full" />
+                      <div className="skeleton h-3 w-1/2 rounded-full" />
+                      <div className="skeleton h-3 w-full rounded-full mt-2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : proyectosFiltrados.length === 0 ? (
-            <div className="text-center py-20 text-gray-400 font-medium text-sm bg-slate-50 rounded-lg border border-dashed">
-              No hay proyectos disponibles con los filtros seleccionados.
+            <div className="text-center py-20 text-ink-400 text-sm bg-white rounded-2xl border border-dashed border-ink-200 animate-fade-in">
+              <div className="text-3xl mb-3 opacity-30">🏠</div>
+              <p className="font-semibold text-ink-600">Sin resultados</p>
+              <p className="text-xs mt-1">No hay proyectos con los filtros seleccionados.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -173,7 +200,7 @@ export default function CatalogoPage() {
                       <div className="mb-4">
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{p.tipo}</p>
                         <h4 className="text-lg font-bold text-slate-900 hover:text-amber-700">
-                          <Link href={`/proyectos/${p.id}`}>{p.titulo}</Link>
+                          <Link href={`/proyectos/${p.ruta || slugify(p.titulo)}`}>{p.titulo}</Link>
                         </h4>
                         <span className="text-xs text-gray-500 block mt-1">📍 {p.ubicacion}</span>
                       </div>
