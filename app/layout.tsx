@@ -27,7 +27,7 @@ export default function RootLayout({
       <body className="text-slate-700 antialiased flex flex-col min-h-screen">
         <nav className="print:hidden bg-white/80 shadow-sm border-b border-slate-100 sticky top-0 z-50 py-4 px-6 flex justify-between items-center backdrop-blur-sm">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/img/horos-inmobiliaria.png" alt="Horos Logo" className="h-12" />
+            <Image src="/img/horos-inmobiliaria.png" alt="Horos Logo" className="h-12" />
           </Link>
           <div className="hidden md:flex items-center gap-6 font-medium text-slate-600 text-sm">
             <Link href="/" className="hover:text-horosblue transition-colors">Inicio</Link>
