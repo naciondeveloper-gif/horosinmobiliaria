@@ -27,14 +27,14 @@ export async function POST(request: Request) {
       port: 465,                     
       secure: true,                  
       auth: {
-        user: 'info@horosinmobiliaria.com', 
-        pass: 'Horos2026*'
+        user: process.env.NEXT_PUBLIC_EMAIL_JS_USER_ID, 
+        pass: process.env.EMAIL_JS_USER_PASSWORD,
       }     
     });
 
     const mailOptions = {
-      from: `"Horos Inmobiliaria" <info@horosinmobiliaria.com>`, 
-      to: 'info@horosinmobiliaria.com',                         
+      from: `"Horos Inmobiliaria" <${process.env.NEXT_PUBLIC_EMAIL_JS_USER_ID}>`, 
+      to: `${process.env.NEXT_PUBLIC_EMAIL_JS_USER_ID}`,                         
       replyTo: correo.trim().toLowerCase(),                     
       subject: `Nuevo Prospecto: Interesado en ${interes} — ${nombre}`,
       html: `
