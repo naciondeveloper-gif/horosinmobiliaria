@@ -23,18 +23,21 @@ export async function POST(request: Request) {
     }
 
     const transporter = nodemailer.createTransport({
-      host: 'horosinmobiliaria.com',
+      host: process.env.SMTP_HOST,
       port: 465,                     
       secure: true,                  
       auth: {
-        user: process.env.NEXT_PUBLIC_EMAIL_JS_USER_ID, 
-        pass: process.env.EMAIL_JS_USER_PASSWORD,
-      }     
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      },
+      tls: {
+        rejectUnauthorized: false // ← ignora que el cert no coincide con la IP
+      }
     });
 
     const mailOptions = {
-      from: `"Horos Inmobiliaria" <${process.env.NEXT_PUBLIC_EMAIL_JS_USER_ID}>`, 
-      to: `${process.env.NEXT_PUBLIC_EMAIL_JS_USER_ID}`,                         
+      from: `"Horos Inmobiliaria" <info@horosinmobiliaria.com>`, 
+      to: 'info@horosinmobiliaria.com',                         
       replyTo: correo.trim().toLowerCase(),                     
       subject: `Nuevo Prospecto: Interesado en ${interes} — ${nombre}`,
       html: `
@@ -79,7 +82,14 @@ export async function POST(request: Request) {
       `,
     };
 
-    // 3. Envío asíncrono
+    try {
+      await transporter.verify();
+      console.log('✅ Conexión SMTP OK');
+    } catch (err) {
+      console.error('❌ SMTP verify falló:', err);
+      // Retorna el error específico para ver qué está pasando
+      return Response.json({ ok: false, error: String(err) }, { status: 500 });
+    }
     await transporter.sendMail(mailOptions);
 
     return NextResponse.json({ message: 'Correo enviado con éxito.' }, { status: 200 });

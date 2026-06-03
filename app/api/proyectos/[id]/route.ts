@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+const slugify = (text: string) => {
+  return text
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+};
+
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -11,6 +21,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       .update({
         titulo: body.titulo,
         tipo: body.tipo,
+        ruta: body.ruta ? slugify(body.ruta) : slugify(body.titulo),
         precio: parseFloat(body.precio),
         imagen: body.imagen,
         imagenes: body.imagenes,

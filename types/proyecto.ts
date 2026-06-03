@@ -11,4 +11,5 @@ export interface Proyecto {
   metros?: number;       
   cuartos?: number;      
   banos?: number;        
+  ruta: string;
 }
