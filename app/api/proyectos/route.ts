@@ -1,61 +1,80 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-const slugify = (text: string) => {
-  return text
-    .toLowerCase()
-    .trim()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-};
+const slugify = (text: string) =>
+  text.toLowerCase().trim()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+const num  = (v: any) => v !== null && v !== undefined && v !== '' ? parseFloat(v)  : null;
+const int  = (v: any) => v !== null && v !== undefined && v !== '' ? parseInt(v)    : null;
+const bool = (v: any) => v !== null && v !== undefined             ? Boolean(v)     : false;
+const str  = (v: any) => v || null;
+const arr  = (v: any) => Array.isArray(v) && v.length > 0         ? v              : null;
 
 export async function GET() {
   try {
-    const { data: proyectos, error } = await supabase
+    const { data, error } = await supabase
       .from('proyectos')
       .select('*')
       .order('created_at', { ascending: false });
-
     if (error) throw error;
-
-    return NextResponse.json(proyectos, { status: 200 });
+    return NextResponse.json(data, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { titulo, tipo, precio, imagen, imagenes, ubicacion, descripcion, metros, cuartos, banos, autor_id, enlace_mas_info, ruta } = body;
+    const b = await request.json();
 
-    if (!titulo || !precio || !ubicacion) {
+    if (!b.titulo || !b.precio || !b.ubicacion) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
     }
 
-    const { data: nuevoProyecto, error } = await supabase
+    const { data, error } = await supabase
       .from('proyectos')
       .insert([{
-        titulo,
-        tipo,
-        ruta: ruta ? slugify(ruta) : slugify(titulo),
-        precio: parseFloat(precio),
-        imagen,
-        imagenes,
-        ubicacion,
-        descripcion,
-        enlace_mas_info,
-        metros: metros ? parseFloat(metros) : null,
-        cuartos: cuartos ? parseInt(cuartos) : null,
-        banos: banos ? parseInt(banos) : null,
-        autor_id
+        titulo:               b.titulo,
+        tipo:                 b.tipo,
+        ruta:                 b.ruta ? slugify(b.ruta) : slugify(b.titulo),
+        precio:               num(b.precio),
+        imagen:               str(b.imagen),
+        imagenes:             arr(b.imagenes),
+        ubicacion:            b.ubicacion,
+        descripcion:          str(b.descripcion),
+        enlace_mas_info:      str(b.enlace_mas_info),
+        metros:               num(b.metros),
+        cuartos:              int(b.cuartos),
+        banos:                int(b.banos),
+        autor_id:             b.autor_id,
+        // Campos adicionales
+        estado:               b.estado               ?? 'disponible',
+        precio_desde:         bool(b.precio_desde),
+        area_techada:         int(b.area_techada),
+        total_unidades:       int(b.total_unidades),
+        garajes:              int(b.garajes),
+        pisos_proyectados:    int(b.pisos_proyectados),
+        piso:                 int(b.piso),
+        total_pisos:          int(b.total_pisos),
+        antiguedad:           int(b.antiguedad),
+        entrega:              str(b.entrega),
+        financiamiento:       bool(b.financiamiento),
+        financiamiento_tipo:  str(b.financiamiento_tipo),
+        amoblado:             bool(b.amoblado),
+        caracteristicas:      arr(b.caracteristicas),
+        video_url:            str(b.video_url),
+        imagen_mapa:          str(b.imagen_mapa),
+        mapa_embed_src:       str(b.mapa_embed_src),
+        landing_proveedor:    str(b.landing_proveedor),
+        ficha_tecnica_url:    str(b.ficha_tecnica_url),
       }])
       .select()
       .single();
 
     if (error) throw error;
-    return NextResponse.json({ message: 'Proyecto creado', proyecto: nuevoProyecto }, { status: 201 });
+    return NextResponse.json({ message: 'Proyecto creado', proyecto: data }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

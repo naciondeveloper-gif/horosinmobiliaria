@@ -3,6 +3,8 @@ import './globals.css';
 import Image from 'next/image';
 import { DM_Sans, Montserrat } from 'next/font/google';
 import NavBar from '@/components/NavBar';
+import { WhatsAppProvider } from '@/context/WhatsAppContext';
+import WhatsAppButton from '@/components/WhatsAppButton';
 import {
   FaPhone, FaEnvelope, FaExternalLinkAlt,
   FaMapMarkerAlt, FaInstagram, FaFacebook,
@@ -36,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${montserrat.variable} ${dmSans.variable}`}>
       <body className="antialiased flex flex-col min-h-screen bg-ink-50">
- 
+        <WhatsAppProvider>
         <NavBar />
       <main className="flex-1">{children}</main>
 
@@ -158,6 +160,8 @@ export default function RootLayout({
           </div>
         </footer>
 
+        <WhatsAppButton />
+        </WhatsAppProvider>
       </body>
     </html>
   );

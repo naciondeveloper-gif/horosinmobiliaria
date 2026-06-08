@@ -8,7 +8,7 @@ import { FiMenu, FiX, FiPhone, FiChevronDown } from 'react-icons/fi';
 
 const LINKS = [
   { href: '/',          label: 'Inicio' },
-  { href: '/#proyectos', label: 'Proyectos' },
+  { href: '/proyectos', label: 'Proyectos' },
   { href: '/nosotros',  label: 'Nosotros' },
   { href: '/contacto',  label: 'Contacto' },
 ];
@@ -68,7 +68,6 @@ export default function NavBar() {
                 }`}
               >
                 {link.label}
-                {/* Underline animada */}
                 <span
                   className={`absolute bottom-1 left-4 right-4 h-0.5 bg-horos-500 rounded-full transition-transform duration-300 origin-left ${
                     active ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
@@ -99,7 +98,6 @@ export default function NavBar() {
           </Link>
         </div>
 
-        {/* ── Hamburguesa móvil ────────────────── */}
         <button
           onClick={() => setOpen(!open)}
           aria-label={open ? 'Cerrar menú' : 'Abrir menú'}

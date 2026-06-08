@@ -34,12 +34,32 @@ export default function PanelAsesores() {
 
   const [editandoProyectoId, setEditandoProyectoId] = useState<number | null>(null);
   const [nuevoProyecto, setNuevoProyecto] = useState({
-    titulo: '', tipo: 'Venta', ubicacion: '', precio: '',
+    titulo: '', tipo: 'Departamento', ubicacion: '', precio: '',
     ruta: '', descripcion: '', metros: '', cuartos: '', banos: '',
     enlace_mas_info: '',
+    // Campos adicionales inmobiliarios
+    estado: 'disponible',
+    precio_desde: false,
+    area_techada: '',
+    garajes: '',
+    pisos_proyectados: '',
+    piso: '',
+    total_pisos: '',
+    antiguedad: '',
+    entrega: '',
+    financiamiento: false,
+    financiamiento_tipo: '',
+    amoblado: false,
+    caracteristicas: '',   // CSV → se convierte a string[] al guardar
+    video_url: '',
+    imagen_mapa: '',
+    landing_proveedor: '',
+    total_unidades: '',
   });
   const [archivosImagenes, setArchivosImagenes] = useState<FileList | null>(null);
   const [imagenesPreview, setImagenesPreview] = useState<string[]>([]);
+  const [archivoMapa, setArchivoMapa] = useState<File | null>(null);
+  const [mapaPreviewUpload, setMapaPreviewUpload] = useState<string>('');
   const [mostrarMapaPreview, setMostrarMapaPreview] = useState(false);
 
   const [editandoUsuarioId, setEditandoUsuarioId] = useState<string | null>(null);
@@ -136,6 +156,18 @@ export default function PanelAsesores() {
     return urls;
   };
 
+  const subirArchivoUnico = async (file: File, prefijo: string): Promise<string> => {
+    const { supabase } = await import('@/lib/supabase');
+    const ext    = file.name.split('.').pop();
+    const nombre = `${prefijo}_${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+      .from('proyectos-imagenes')
+      .upload(nombre, file, { cacheControl: '3600', upsert: false });
+    if (error) throw new Error(`Error subiendo ${prefijo}: ${error.message}`);
+    const { data: urlData } = supabase.storage.from('proyectos-imagenes').getPublicUrl(nombre);
+    return urlData.publicUrl;
+  };
+
   const slugify = (text: string) =>
     text.toLowerCase().trim()
       .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -157,14 +189,39 @@ export default function PanelAsesores() {
     setImagenesPreview(Array.from(files).map((f) => URL.createObjectURL(f)));
   };
 
+  const handleImagenMapaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) { setArchivoMapa(null); setMapaPreviewUpload(''); return; }
+    setArchivoMapa(file);
+    setMapaPreviewUpload(URL.createObjectURL(file));
+  };
+
+  const PROYECTO_VACIO = {
+    titulo: '', tipo: 'Departamento', ubicacion: '', precio: '',
+    ruta: '', descripcion: '', metros: '', cuartos: '', banos: '',
+    enlace_mas_info: '',
+    estado: 'disponible', precio_desde: false,
+    area_techada: '', garajes: '', pisos_proyectados: '',
+    piso: '', total_pisos: '', antiguedad: '',
+    entrega: '', financiamiento: false, financiamiento_tipo: '',
+    amoblado: false, caracteristicas: '', video_url: '',
+    imagen_mapa: '',
+    landing_proveedor: '',
+    total_unidades: '',
+  };
+
   const cancelarEdicionProyecto = () => {
     setEditandoProyectoId(null);
-    setNuevoProyecto({ titulo: '', tipo: 'Venta', ubicacion: '', precio: '', ruta: '', descripcion: '', metros: '', cuartos: '', banos: '', enlace_mas_info: '' });
+    setNuevoProyecto(PROYECTO_VACIO);
     setArchivosImagenes(null);
     setImagenesPreview([]);
+    setArchivoMapa(null);
+    setMapaPreviewUpload('');
     setMostrarMapaPreview(false);
     const input = document.getElementById('file-selector') as HTMLInputElement;
     if (input) input.value = '';
+    const inputMapa = document.getElementById('mapa-file') as HTMLInputElement;
+    if (inputMapa) inputMapa.value = '';
   };
 
   const handleGuardarProyecto = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -192,11 +249,34 @@ export default function PanelAsesores() {
         metros: nuevoProyecto.metros ? parseFloat(nuevoProyecto.metros) : null,
         cuartos: nuevoProyecto.cuartos ? parseInt(nuevoProyecto.cuartos) : null,
         banos: nuevoProyecto.banos ? parseInt(nuevoProyecto.banos) : null,
-        enlace_mas_info: nuevoProyecto.enlace_mas_info,
+        enlace_mas_info: nuevoProyecto.enlace_mas_info || null,
+        estado: nuevoProyecto.estado,
+        precio_desde: nuevoProyecto.precio_desde,
+        area_techada: nuevoProyecto.area_techada ? parseInt(nuevoProyecto.area_techada) : null,
+        garajes: nuevoProyecto.garajes ? parseInt(nuevoProyecto.garajes) : null,
+        pisos_proyectados: nuevoProyecto.pisos_proyectados ? parseInt(nuevoProyecto.pisos_proyectados) : null,
+        piso: nuevoProyecto.piso ? parseInt(nuevoProyecto.piso) : null,
+        total_pisos: nuevoProyecto.total_pisos ? parseInt(nuevoProyecto.total_pisos) : null,
+        antiguedad: nuevoProyecto.antiguedad !== '' ? parseInt(nuevoProyecto.antiguedad) : null, // 0 es válido (obra nueva)
+        entrega: nuevoProyecto.entrega || null,
+        financiamiento: nuevoProyecto.financiamiento,
+        financiamiento_tipo: nuevoProyecto.financiamiento_tipo || null,
+        amoblado: nuevoProyecto.amoblado,
+        caracteristicas: nuevoProyecto.caracteristicas
+          ? nuevoProyecto.caracteristicas.split(',').map((s) => s.trim()).filter(Boolean)
+          : null,
+        video_url: nuevoProyecto.video_url || null,
+        imagen_mapa: nuevoProyecto.imagen_mapa || null,
+        landing_proveedor: nuevoProyecto.landing_proveedor || null,
+        total_unidades: nuevoProyecto.total_unidades ? parseInt(nuevoProyecto.total_unidades) : null,
       };
       if (urlsImagenes.length > 0) {
         datos.imagen = urlsImagenes[0];
         datos.imagenes = urlsImagenes;
+      }
+      if (archivoMapa) {
+        setStatusMsg({ type: 'info', text: 'Subiendo imagen del mapa...' });
+        datos.imagen_mapa = await subirArchivoUnico(archivoMapa, 'mapa');
       }
 
       const url = editandoProyectoId ? `/api/proyectos/${editandoProyectoId}` : '/api/proyectos';
@@ -232,8 +312,27 @@ export default function PanelAsesores() {
       descripcion: p.descripcion || '',
       metros: p.metros?.toString() || '', cuartos: p.cuartos?.toString() || '',
       banos: p.banos?.toString() || '', enlace_mas_info: p.enlace_mas_info || '',
+      estado: p.estado || 'disponible',
+      precio_desde: p.precio_desde ?? false,
+      area_techada: p.area_techada?.toString() || '',
+      garajes: p.garajes?.toString() || '',
+      pisos_proyectados: p.pisos_proyectados?.toString() || '',
+      piso: p.piso?.toString() || '',
+      total_pisos: p.total_pisos?.toString() || '',
+      antiguedad: p.antiguedad?.toString() || '',
+      entrega: p.entrega || '',
+      financiamiento: p.financiamiento ?? false,
+      financiamiento_tipo: p.financiamiento_tipo || '',
+      amoblado: p.amoblado ?? false,
+      caracteristicas: Array.isArray(p.caracteristicas) ? p.caracteristicas.join(', ') : '',
+      video_url: p.video_url || '',
+      imagen_mapa: p.imagen_mapa || '',
+      landing_proveedor: p.landing_proveedor || '',
+      total_unidades: p.total_unidades?.toString() || '',
     });
     setImagenesPreview([]);
+    setMapaPreviewUpload('');
+    setArchivoMapa(null);
     setMostrarMapaPreview(false);
     window.scrollTo({ top: 300, behavior: 'smooth' });
   };
@@ -452,7 +551,7 @@ export default function PanelAsesores() {
                   <div className={`px-6 py-4 border-b border-slate-200 flex justify-between items-center ${editandoProyectoId ? 'bg-amber-50 border-amber-200' : ''}`}>
                     <h3 className="font-black text-slate-900 flex items-center gap-2 text-sm">
                       <FiBriefcase className={editandoProyectoId ? 'text-amber-600' : 'text-slate-500'} />
-                      {editandoProyectoId ? `Editando Inmueble #${editandoProyectoId}` : 'Publicar Nuevo Inmueble'}
+                      {editandoProyectoId ? `Editando Inmueble` : 'Publicar Nuevo Inmueble'}
                     </h3>
                     {editandoProyectoId && (
                       <button type="button" onClick={cancelarEdicionProyecto}
@@ -481,12 +580,27 @@ export default function PanelAsesores() {
                         <p className="text-[10px] text-slate-400">URL: /proyectos/<em>mi-ruta</em></p>
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Modalidad</label>
+                        <label className="text-xs font-bold text-slate-600">Tipo de inmueble</label>
                         <select className="border border-slate-200 rounded-lg py-2 px-3 text-sm bg-white outline-none cursor-pointer focus:ring-2 focus:ring-amber-600"
                           value={nuevoProyecto.tipo}
                           onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, tipo: e.target.value })}>
-                          <option value="Venta">Venta</option>
-                          <option value="Alquiler">Alquiler</option>
+                          <optgroup label="── Proyectos / Conjuntos">
+                            <option value="Conjunto Residencial">Conjunto Residencial</option>
+                            <option value="Lote + Casa">Lote + Casa</option>
+                            <option value="Lote / Terreno">Lote / Terreno</option>
+                          </optgroup>
+                          <optgroup label="── Venta">
+                            <option value="Departamento">Departamento</option>
+                            <option value="Casa">Casa</option>
+                            <option value="Local Comercial">Local Comercial</option>
+                            <option value="Oficina">Oficina</option>
+                          </optgroup>
+                          <optgroup label="── Alquiler">
+                            <option value="Departamento (Alquiler)">Departamento (Alquiler)</option>
+                            <option value="Casa (Alquiler)">Casa (Alquiler)</option>
+                            <option value="Oficina (Alquiler)">Oficina (Alquiler)</option>
+                            <option value="Local Comercial (Alquiler)">Local Comercial (Alquiler)</option>
+                          </optgroup>
                         </select>
                       </div>
                     </div>
@@ -499,7 +613,7 @@ export default function PanelAsesores() {
                           Dirección exacta <span className="text-amber-600">(aparece en el mapa)</span>
                         </label>
                         <div className="flex gap-2">
-                          <input type="text" required placeholder="Av. América Norte 123, Trujillo"
+                          <input type="text" required placeholder="Av. América Norte 123"
                             className="border border-slate-200 rounded-lg py-2 px-3 text-sm outline-none bg-white focus:ring-2 focus:ring-amber-600 flex-1"
                             value={nuevoProyecto.ubicacion}
                             onChange={(e) => {
@@ -539,29 +653,418 @@ export default function PanelAsesores() {
                       </div>
                     )}
 
-                    {/* Fila 3: m², dorms, baños */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600 flex items-center gap-1"><FiMaximize2 size={11} />Área m²</label>
-                        <input type="number" placeholder="140 (opcional)"
-                          className="border border-slate-200 rounded-lg py-2 px-3 text-sm outline-none bg-white focus:ring-2 focus:ring-amber-600"
-                          value={nuevoProyecto.metros}
-                          onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, metros: e.target.value })} />
+                    {/* ── Campos dinámicos por tipo ───────────────────────── */}
+                    {(() => {
+                      const t   = nuevoProyecto.tipo.toLowerCase();
+                      const cat = t.includes('conjunto') || t.includes('lote') || t.includes('terreno')
+                        ? 'lote'
+                        : t.includes('departamento') ? 'depto'
+                        : t.includes('casa')         ? 'casa'
+                        : 'comercial';
+
+                      const inp = "border border-slate-200 rounded-lg py-2 px-3 text-sm outline-none bg-white focus:ring-2 focus:ring-amber-600";
+                      const lbl = "text-xs font-bold text-slate-600";
+
+                      const LABELS: Record<string, { icon: string; color: string; desc: string }> = {
+                        lote:     { icon: '🏘️', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', desc: 'Conjunto / Lote' },
+                        depto:    { icon: '🏢', color: 'bg-blue-50    text-blue-700    border-blue-200',    desc: 'Departamento'   },
+                        casa:     { icon: '🏠', color: 'bg-amber-50   text-amber-700   border-amber-200',   desc: 'Casa'           },
+                        comercial:{ icon: '🏪', color: 'bg-purple-50  text-purple-700  border-purple-200',  desc: 'Comercial'      },
+                      };
+                      const lb = LABELS[cat];
+
+                      return (
+                        <div className="flex flex-col gap-4">
+                          {/* Badge de categoría detectada */}
+                          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-bold ${lb.color}`}>
+                            <span>{lb.icon}</span>
+                            Campos para: <strong>{lb.desc}</strong>
+                            <span className="ml-auto font-normal opacity-60">Se ajustan automáticamente al cambiar el tipo</span>
+                          </div>
+
+                          {/* ── CONJUNTO / LOTE ──────────────────────────── */}
+                          {cat === 'lote' && (
+                            <>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={`${lbl} flex items-center gap-1`}><FiMaximize2 size={11} />Área del lote m²</label>
+                                  <input type="number" placeholder="90" className={inp}
+                                    value={nuevoProyecto.metros}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, metros: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={`${lbl} flex items-center gap-1`}><FiMaximize2 size={11} />Área construida / techada m²</label>
+                                  <input type="number" placeholder="35" className={inp}
+                                    value={nuevoProyecto.area_techada}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, area_techada: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Pisos proyectados</label>
+                                  <input type="number" placeholder="1" className={inp}
+                                    value={nuevoProyecto.pisos_proyectados}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, pisos_proyectados: e.target.value })} />
+                                  <p className="text-[10px] text-slate-400">Ej. 1 piso con proyección a 2</p>
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={`${lbl} flex items-center gap-1`}><FaBed size={11} />Dormitorios (si aplica)</label>
+                                  <input type="number" placeholder="—" className={inp}
+                                    value={nuevoProyecto.cuartos}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, cuartos: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={`${lbl} flex items-center gap-1`}><FaBath size={11} />Baños (si aplica)</label>
+                                  <input type="number" placeholder="—" className={inp}
+                                    value={nuevoProyecto.banos}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, banos: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Garajes</label>
+                                  <input type="number" placeholder="—" className={inp}
+                                    value={nuevoProyecto.garajes}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, garajes: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Nº total de lotes / unidades</label>
+                                  <input type="number" placeholder="Ej. 120"
+                                    className={inp}
+                                    value={nuevoProyecto.total_unidades}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, total_unidades: e.target.value })} />
+                                  <p className="text-[10px] text-slate-400">Se muestra como "120 lotes" en la ficha</p>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Estado del proyecto</label>
+                                  <select className={`${inp} cursor-pointer`}
+                                    value={nuevoProyecto.estado}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, estado: e.target.value })}>
+                                    <option value="disponible">✅ Disponible</option>
+                                    <option value="reservado">🟡 Reservado</option>
+                                    <option value="vendido">⛔ Agotado / Vendido</option>
+                                  </select>
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Fecha de entrega</label>
+                                  <input type="text" placeholder="Diciembre 2025" className={inp}
+                                    value={nuevoProyecto.entrega}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, entrega: e.target.value })} />
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {/* ── DEPARTAMENTO ─────────────────────────────── */}
+                          {cat === 'depto' && (
+                            <>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={`${lbl} flex items-center gap-1`}><FiMaximize2 size={11} />Área total m²</label>
+                                  <input type="number" placeholder="85" className={inp}
+                                    value={nuevoProyecto.metros}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, metros: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={`${lbl} flex items-center gap-1`}><FaBed size={11} />Dormitorios</label>
+                                  <input type="number" placeholder="3" className={inp}
+                                    value={nuevoProyecto.cuartos}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, cuartos: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={`${lbl} flex items-center gap-1`}><FaBath size={11} />Baños</label>
+                                  <input type="number" placeholder="2" className={inp}
+                                    value={nuevoProyecto.banos}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, banos: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Garajes</label>
+                                  <input type="number" placeholder="1" className={inp}
+                                    value={nuevoProyecto.garajes}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, garajes: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Piso del departamento</label>
+                                  <input type="number" placeholder="5" className={inp}
+                                    value={nuevoProyecto.piso}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, piso: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Total pisos del edificio</label>
+                                  <input type="number" placeholder="12" className={inp}
+                                    value={nuevoProyecto.total_pisos}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, total_pisos: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Antigüedad (años)</label>
+                                  <input type="number" placeholder="0 = obra nueva" className={inp}
+                                    value={nuevoProyecto.antiguedad}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, antiguedad: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Fecha de entrega</label>
+                                  <input type="text" placeholder="Inmediata / Dic 2025" className={inp}
+                                    value={nuevoProyecto.entrega}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, entrega: e.target.value })} />
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-1.5">
+                                <label className={lbl}>Estado</label>
+                                <select className={`${inp} cursor-pointer`}
+                                  value={nuevoProyecto.estado}
+                                  onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, estado: e.target.value })}>
+                                  <option value="disponible">✅ Disponible</option>
+                                  <option value="reservado">🟡 Reservado</option>
+                                  <option value="vendido">⛔ Vendido</option>
+                                </select>
+                              </div>
+                            </>
+                          )}
+
+                          {/* ── CASA ─────────────────────────────────────── */}
+                          {cat === 'casa' && (
+                            <>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={`${lbl} flex items-center gap-1`}><FiMaximize2 size={11} />Área total m²</label>
+                                  <input type="number" placeholder="120" className={inp}
+                                    value={nuevoProyecto.metros}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, metros: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={`${lbl} flex items-center gap-1`}><FiMaximize2 size={11} />Área construida m²</label>
+                                  <input type="number" placeholder="100" className={inp}
+                                    value={nuevoProyecto.area_techada}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, area_techada: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={`${lbl} flex items-center gap-1`}><FaBed size={11} />Dormitorios</label>
+                                  <input type="number" placeholder="3" className={inp}
+                                    value={nuevoProyecto.cuartos}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, cuartos: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={`${lbl} flex items-center gap-1`}><FaBath size={11} />Baños</label>
+                                  <input type="number" placeholder="2" className={inp}
+                                    value={nuevoProyecto.banos}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, banos: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Garajes</label>
+                                  <input type="number" placeholder="1" className={inp}
+                                    value={nuevoProyecto.garajes}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, garajes: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Pisos de la casa</label>
+                                  <input type="number" placeholder="2" className={inp}
+                                    value={nuevoProyecto.pisos_proyectados}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, pisos_proyectados: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Antigüedad (años)</label>
+                                  <input type="number" placeholder="0 = nueva" className={inp}
+                                    value={nuevoProyecto.antiguedad}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, antiguedad: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Fecha de entrega</label>
+                                  <input type="text" placeholder="Inmediata / Dic 2025" className={inp}
+                                    value={nuevoProyecto.entrega}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, entrega: e.target.value })} />
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-1.5">
+                                <label className={lbl}>Estado</label>
+                                <select className={`${inp} cursor-pointer`}
+                                  value={nuevoProyecto.estado}
+                                  onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, estado: e.target.value })}>
+                                  <option value="disponible">✅ Disponible</option>
+                                  <option value="reservado">🟡 Reservado</option>
+                                  <option value="vendido">⛔ Vendido</option>
+                                </select>
+                              </div>
+                            </>
+                          )}
+
+                          {/* ── COMERCIAL / OFICINA ──────────────────────── */}
+                          {cat === 'comercial' && (
+                            <>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={`${lbl} flex items-center gap-1`}><FiMaximize2 size={11} />Área m²</label>
+                                  <input type="number" placeholder="60" className={inp}
+                                    value={nuevoProyecto.metros}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, metros: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Piso</label>
+                                  <input type="number" placeholder="3" className={inp}
+                                    value={nuevoProyecto.piso}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, piso: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Total pisos edificio</label>
+                                  <input type="number" placeholder="10" className={inp}
+                                    value={nuevoProyecto.total_pisos}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, total_pisos: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Garajes</label>
+                                  <input type="number" placeholder="—" className={inp}
+                                    value={nuevoProyecto.garajes}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, garajes: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Antigüedad (años)</label>
+                                  <input type="number" placeholder="0 = nueva" className={inp}
+                                    value={nuevoProyecto.antiguedad}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, antiguedad: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className={lbl}>Fecha de entrega</label>
+                                  <input type="text" placeholder="Inmediata" className={inp}
+                                    value={nuevoProyecto.entrega}
+                                    onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, entrega: e.target.value })} />
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-1.5">
+                                <label className={lbl}>Estado</label>
+                                <select className={`${inp} cursor-pointer`}
+                                  value={nuevoProyecto.estado}
+                                  onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, estado: e.target.value })}>
+                                  <option value="disponible">✅ Disponible</option>
+                                  <option value="reservado">🟡 Reservado</option>
+                                  <option value="vendido">⛔ Vendido</option>
+                                </select>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Fila 6: Condiciones (checkboxes + financiamiento tipo) */}
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-3">
+                      <p className="text-xs font-black text-slate-700 uppercase tracking-wide">Condiciones del proyecto</p>
+                      <div className="flex flex-wrap gap-6">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
+                          <input type="checkbox"
+                            className="w-4 h-4 rounded accent-amber-600"
+                            checked={nuevoProyecto.precio_desde}
+                            onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, precio_desde: e.target.checked })} />
+                          Precio <strong>"Desde"</strong>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
+                          <input type="checkbox"
+                            className="w-4 h-4 rounded accent-amber-600"
+                            checked={nuevoProyecto.financiamiento}
+                            onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, financiamiento: e.target.checked })} />
+                          Acepta financiamiento
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
+                          <input type="checkbox"
+                            className="w-4 h-4 rounded accent-amber-600"
+                            checked={nuevoProyecto.amoblado}
+                            onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, amoblado: e.target.checked })} />
+                          Se entrega amoblado
+                        </label>
                       </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600 flex items-center gap-1"><FaBed size={11} />Dormitorios</label>
-                        <input type="number" placeholder="3 (opcional)"
-                          className="border border-slate-200 rounded-lg py-2 px-3 text-sm outline-none bg-white focus:ring-2 focus:ring-amber-600"
-                          value={nuevoProyecto.cuartos}
-                          onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, cuartos: e.target.value })} />
+                      {nuevoProyecto.financiamiento && (
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-bold text-slate-600">Tipo de financiamiento</label>
+                          <input type="text" placeholder="FOVIME, MIVIVIENDA, Banco BCP..."
+                            className="border border-slate-200 rounded-lg py-2 px-3 text-sm outline-none bg-white focus:ring-2 focus:ring-amber-600"
+                            value={nuevoProyecto.financiamiento_tipo}
+                            onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, financiamiento_tipo: e.target.value })} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Fila 7: Amenidades */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-600">Amenidades y servicios incluidos</label>
+                      <input type="text"
+                        placeholder="Título de propiedad, Agua y desagüe, Áreas verdes, Juegos para niños"
+                        className="border border-slate-200 rounded-lg py-2 px-3 text-sm outline-none bg-white focus:ring-2 focus:ring-amber-600"
+                        value={nuevoProyecto.caracteristicas}
+                        onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, caracteristicas: e.target.value })} />
+                      <p className="text-[10px] text-slate-400">Separa cada amenidad con una coma.</p>
+                    </div>
+
+                    {/* Fila 8: Video */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-600 flex items-center gap-1"><FiLink size={11} />Video tour (YouTube u otro)</label>
+                      <input type="url" placeholder="https://www.youtube.com/watch?v=..."
+                        className="border border-slate-200 rounded-lg py-2 px-3 text-sm outline-none bg-white focus:ring-2 focus:ring-amber-600"
+                        value={nuevoProyecto.video_url}
+                        onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, video_url: e.target.value })} />
+                    </div>
+
+                    {/* Imagen del mapa */}
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-bold text-slate-600 flex items-center gap-1">
+                        <FiMapPin size={11} className="text-amber-600" />
+                        Imagen del mapa / plano de ubicación (opcional)
+                      </label>
+                      <div className="flex gap-3 items-start">
+                        <div className="flex-1 flex flex-col gap-2">
+                          {/* Upload de archivo */}
+                          <div className="border-2 border-dashed border-slate-200 rounded-xl p-3 bg-white hover:border-amber-400 transition-colors">
+                            <input
+                              id="mapa-file"
+                              type="file"
+                              accept="image/*"
+                              className="text-xs file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer"
+                              onChange={handleImagenMapaChange}
+                            />
+                            <p className="text-[10px] text-slate-400 mt-1">Plano de ubicación, captura de mapa satelital, etc.</p>
+                          </div>
+                          {/* O pegar URL directa */}
+                          <input
+                            type="url"
+                            placeholder="O pega la URL de la imagen si ya la tienes"
+                            className="border border-slate-200 rounded-lg py-2 px-3 text-sm outline-none bg-white focus:ring-2 focus:ring-amber-600"
+                            value={nuevoProyecto.imagen_mapa}
+                            onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, imagen_mapa: e.target.value })}
+                          />
+                        </div>
+                        {/* Preview */}
+                        {(mapaPreviewUpload || nuevoProyecto.imagen_mapa) && (
+                          <div className="relative shrink-0 w-32 h-24 rounded-xl overflow-hidden border-2 border-amber-400 shadow-sm">
+                            <img
+                              src={mapaPreviewUpload || nuevoProyecto.imagen_mapa}
+                              alt="Preview mapa"
+                              className="w-full h-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setArchivoMapa(null);
+                                setMapaPreviewUpload('');
+                                setNuevoProyecto({ ...nuevoProyecto, imagen_mapa: '' });
+                                const inp = document.getElementById('mapa-file') as HTMLInputElement;
+                                if (inp) inp.value = '';
+                              }}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-black hover:bg-red-600"
+                              title="Quitar imagen"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600 flex items-center gap-1"><FaBath size={11} />Baños</label>
-                        <input type="number" placeholder="2 (opcional)"
-                          className="border border-slate-200 rounded-lg py-2 px-3 text-sm outline-none bg-white focus:ring-2 focus:ring-amber-600"
-                          value={nuevoProyecto.banos}
-                          onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, banos: e.target.value })} />
-                      </div>
+                    </div>
+
+                    {/* Landing proveedor */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-600">Landing embebido</label>
+                      <select
+                        className="border border-slate-200 rounded-lg py-2 px-3 text-sm bg-white outline-none cursor-pointer focus:ring-2 focus:ring-amber-600"
+                        value={nuevoProyecto.landing_proveedor}
+                        onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, landing_proveedor: e.target.value })}>
+                        <option value="">— Sin landing —</option>
+                        <option value="neptuno">Consorcio Neptuno</option>
+                      </select>
+                      <p className="text-[10px] text-slate-400">Activa la sección de marca del proveedor al fondo de la ficha.</p>
                     </div>
 
                     {/* Descripción */}
@@ -668,8 +1171,16 @@ export default function PanelAsesores() {
                                   {p.ubicacion}
                                   <span className="ml-1 bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded text-[9px] uppercase">{p.tipo}</span>
                                 </p>
+                                <span className={`inline-block mt-1 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full ${
+                                  p.estado === 'vendido'   ? 'bg-slate-100 text-slate-500' :
+                                  p.estado === 'reservado' ? 'bg-amber-100 text-amber-700' :
+                                                             'bg-emerald-100 text-emerald-700'
+                                }`}>
+                                  {p.estado ?? 'disponible'}
+                                </span>
                               </td>
                               <td className="px-4 py-3 font-black text-slate-800 whitespace-nowrap">
+                                {p.precio_desde && <span className="text-[10px] font-semibold text-slate-400 block">Desde</span>}
                                 S/. {p.precio.toLocaleString('es-PE')}
                               </td>
                               <td className="px-4 py-3">
