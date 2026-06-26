@@ -244,7 +244,7 @@ export default function PanelAsesores() {
         tipo: nuevoProyecto.tipo,
         ubicacion: nuevoProyecto.ubicacion,
         ruta: nuevoProyecto.ruta ? slugify(nuevoProyecto.ruta) : (slugify(nuevoProyecto.titulo) || `proyecto-${Date.now()}`),
-        precio: parseFloat(nuevoProyecto.precio),
+        precio: parseInt(nuevoProyecto.precio, 10),
         descripcion: nuevoProyecto.descripcion,
         metros: nuevoProyecto.metros ? parseFloat(nuevoProyecto.metros) : null,
         cuartos: nuevoProyecto.cuartos ? parseInt(nuevoProyecto.cuartos) : null,
@@ -252,7 +252,7 @@ export default function PanelAsesores() {
         enlace_mas_info: nuevoProyecto.enlace_mas_info || null,
         estado: nuevoProyecto.estado,
         precio_desde: nuevoProyecto.precio_desde,
-        area_techada: nuevoProyecto.area_techada ? parseInt(nuevoProyecto.area_techada) : null,
+        area_techada: nuevoProyecto.area_techada ? parseFloat(nuevoProyecto.area_techada) : null,
         garajes: nuevoProyecto.garajes ? parseInt(nuevoProyecto.garajes) : null,
         pisos_proyectados: nuevoProyecto.pisos_proyectados ? parseInt(nuevoProyecto.pisos_proyectados) : null,
         piso: nuevoProyecto.piso ? parseInt(nuevoProyecto.piso) : null,
@@ -694,7 +694,7 @@ export default function PanelAsesores() {
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                   <label className={`${lbl} flex items-center gap-1`}><FiMaximize2 size={11} />Área construida / techada m²</label>
-                                  <input type="number" placeholder="35" className={inp}
+                                  <input type="number" step="any" placeholder="35" className={inp}
                                     value={nuevoProyecto.area_techada}
                                     onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, area_techada: e.target.value })} />
                                 </div>
@@ -831,7 +831,7 @@ export default function PanelAsesores() {
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                   <label className={`${lbl} flex items-center gap-1`}><FiMaximize2 size={11} />Área construida m²</label>
-                                  <input type="number" placeholder="100" className={inp}
+                                  <input type="number" step="any" placeholder="100" className={inp}
                                     value={nuevoProyecto.area_techada}
                                     onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, area_techada: e.target.value })} />
                                 </div>

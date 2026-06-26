@@ -39,7 +39,7 @@ export async function POST(request: Request) {
         titulo:               b.titulo,
         tipo:                 b.tipo,
         ruta:                 b.ruta ? slugify(b.ruta) : slugify(b.titulo),
-        precio:               num(b.precio),
+        precio:               int(b.precio),
         imagen:               str(b.imagen),
         imagenes:             arr(b.imagenes),
         ubicacion:            b.ubicacion,
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
         // Campos adicionales
         estado:               b.estado               ?? 'disponible',
         precio_desde:         bool(b.precio_desde),
-        area_techada:         int(b.area_techada),
+        area_techada:         num(b.area_techada),
         total_unidades:       int(b.total_unidades),
         garajes:              int(b.garajes),
         pisos_proyectados:    int(b.pisos_proyectados),

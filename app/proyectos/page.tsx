@@ -151,9 +151,6 @@ export default function CatalogoPage() {
                         alt={p.titulo} 
                         className="w-full h-full object-cover transition-transform duration-700 ease-out scale-100 hover:scale-105" 
                       />
-                      <div className="absolute bottom-3 left-3 bg-slate-900/90 text-white font-semibold text-sm px-3 py-1 rounded-sm shadow-sm">
-                        S/. {p.precio.toLocaleString('es-PE')}
-                      </div>
                       {tieneSegundaFoto && (
                         <div className="absolute top-3 right-3 bg-black/40 text-[10px] text-white px-2 py-0.5 rounded-full backdrop-blur-xs">
                           +{listaFotos.length} fotos
@@ -170,7 +167,10 @@ export default function CatalogoPage() {
                         <span className="text-xs text-gray-500 block mt-1">📍 {p.ubicacion}</span>
                       </div>
                       <div className="flex justify-between items-center text-xs text-gray-600 font-semibold border-t border-slate-100 pt-3">
-                        <span>📐 {p.metros || '---'} m²</span>
+                        {p.metros && <span>📐 Lote: {p.metros} m²</span>}
+                        {(p.area_techada ?? p.area_construida) && (
+                          <span>🏠 Casa: {p.area_techada ?? p.area_construida} m²</span>
+                        )}
                         <span>🛏️ {p.cuartos || '---'} Dorms</span>
                         <span>🚿 {p.banos || '---'} Baños</span>
                       </div>

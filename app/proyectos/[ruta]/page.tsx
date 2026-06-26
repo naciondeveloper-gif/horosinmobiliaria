@@ -297,12 +297,12 @@ export default function FichaProyectoPage() {
     proyecto.metros && {
       icon: <FiMaximize2 className="text-horos-500" />,
       val: `${proyecto.metros} m²`,
-      label: esLote ? 'Área terreno' : 'Área total',
+      label: esLote ? 'Lote' : 'Área total',
     },
     areaEfectiva && {
       icon: <FiMaximize2 className="text-horos-500" />,
       val: `${areaEfectiva} m²`,
-      label: esLote ? 'Área construida' : 'Área techada',
+      label: esLote ? 'Casa' : 'Área techada',
     },
     proyecto.pisos_proyectados && {
       icon: <FiLayers className="text-horos-500" />,
