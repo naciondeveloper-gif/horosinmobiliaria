@@ -337,12 +337,7 @@ export default function FichaProyectoPage() {
       icon: <FaCar className="text-horos-500" />,
       val: `${proyecto.garajes}`,
       label: proyecto.garajes === 1 ? 'Garaje' : 'Garajes',
-    },
-    proyecto.piso && {
-      icon: <FiLayers className="text-horos-500" />,
-      val: `Piso ${proyecto.piso}${proyecto.total_pisos ? ` / ${proyecto.total_pisos}` : ''}`,
-      label: 'Nivel',
-    },
+    },,
   ].filter(Boolean) as { icon: React.ReactNode; val: string; label: string }[];
 
   return (
@@ -627,7 +622,7 @@ export default function FichaProyectoPage() {
                           <div className="border-t border-slate-100 pt-4 mt-2">
                             <div className="flex items-center gap-2 mb-3">
                               <div className="w-5 h-5 rounded-md bg-slate-800 flex items-center justify-center text-[9px] font-black text-white shrink-0">+</div>
-                              <span className="text-slate-700 font-black text-[11px] uppercase tracking-wider">Ampliación de casa</span>
+                              <span className="text-slate-700 font-black text-[11px] uppercase tracking-wider">Proyección de casa</span>
                             </div>
                             {(() => {
                               const ampImgs: string[] = Array.isArray(m.ampliacion.imagenes) ? m.ampliacion.imagenes : [];
