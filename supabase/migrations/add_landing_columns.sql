@@ -1,0 +1,3 @@
+ALTER TABLE proyectos
+ADD COLUMN IF NOT EXISTS landing_url TEXT,
+ADD COLUMN IF NOT EXISTS landing_imagen TEXT;

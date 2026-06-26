@@ -50,7 +50,8 @@ function LandingNeptuno({ proyecto, areaEfectiva, esLote }: {
   esLote: boolean;
 }) {
   const NEPTUNO_PHONE = '51924888889';
-  const NEPTUNO_URL   = 'https://www.consorcioneptuno.com';
+  const landingUrl    = proyecto.landing_url || 'https://www.consorcioneptuno.com';
+  const landingHost   = (() => { try { return new URL(landingUrl).hostname.replace('www.', ''); } catch { return landingUrl; } })();
 
   const wpMsg  = `Hola, me interesa el proyecto *"${proyecto.titulo}"* que vi en horosinmobiliaria.com. ¿Me pueden brindar información sobre disponibilidad y condiciones?`;
   const wpHref = `https://wa.me/${NEPTUNO_PHONE}?text=${encodeURIComponent(wpMsg)}`;
@@ -167,9 +168,9 @@ function LandingNeptuno({ proyecto, areaEfectiva, esLote }: {
                 className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/15 hover:bg-white/15 text-white font-bold py-3 px-4 rounded-xl text-sm transition-colors">
                 <FiPhone size={14} /> 924 888 889
               </a>
-              <a href={NEPTUNO_URL} target="_blank" rel="noopener noreferrer"
+              <a href={landingUrl} target="_blank" rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-2 bg-horos-500 hover:bg-horos-400 text-white font-black py-3 px-4 rounded-xl text-sm transition-colors">
-                <FiExternalLink size={14} /> consorcioneptuno.com
+                <FiExternalLink size={14} /> {landingHost}
               </a>
             </div>
 
@@ -178,6 +179,14 @@ function LandingNeptuno({ proyecto, areaEfectiva, esLote }: {
             </p>
           </div>
         </div>
+
+        {proyecto.landing_imagen && (
+          <a href={landingUrl} target="_blank" rel="noopener noreferrer"
+            className="block mt-8 rounded-2xl overflow-hidden border border-horos-400/20 hover:border-horos-300/40 transition-all group">
+            <img src={proyecto.landing_imagen} alt={proyecto.titulo}
+              className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+          </a>
+        )}
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-transparent via-horos-400/50 to-transparent" />
@@ -195,6 +204,10 @@ export default function FichaProyectoPage() {
   const [fotoIndex, setFotoIndex] = useState(0);
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
   const [modalFoto, setModalFoto] = useState<number | null>(null);
+  const [modalModelo, setModalModelo] = useState<{ mi: number; ii: number } | null>(null);
+  const [modalAmpliacion, setModalAmpliacion] = useState<{ mi: number; ai: number } | null>(null);
+  const [modeloFotoIdx, setModeloFotoIdx] = useState<Record<number, number>>({});
+  const [ampliacionFotoIdx, setAmpliacionFotoIdx] = useState<Record<number, number>>({});
 
   useEffect(() => {
     if (!ruta) return;
@@ -264,13 +277,14 @@ export default function FichaProyectoPage() {
     );
   }
 
-  const listaFotos =
+  const galeriaFotos =
     Array.isArray(proyecto.imagenes) && proyecto.imagenes.length > 0
       ? proyecto.imagenes
       : [proyecto.imagen];
 
-  const anterior = () => setFotoIndex(p => (p === 0 ? listaFotos.length - 1 : p - 1));
-  const siguiente = () => setFotoIndex(p => (p === listaFotos.length - 1 ? 0 : p + 1));
+  const listaModelos = Array.isArray(proyecto.modelos) ? (proyecto.modelos as any[]) : [];
+  const listaFotos = [...galeriaFotos];
+  const modeloStartIndex = galeriaFotos.length;
 
   const modalAnterior = () =>
     setModalFoto(p => p === null ? null : (p === 0 ? listaFotos.length - 1 : p - 1));
@@ -335,124 +349,123 @@ export default function FichaProyectoPage() {
     <div className="bg-ink-50 min-h-screen">
       <WhatsAppProjectSync proyecto={proyecto} />
 
-      {/* ── Hero ────────────────────────────────────────────────── */}
-      <section className="relative h-[75vh] min-h-[540px] w-full overflow-hidden bg-ink-900">
-        <Image
-          src={fotoSrc}
-          alt={proyecto.titulo}
-          fill
-          className={`object-cover transition-all duration-700 ${estado === 'vendido' ? 'opacity-60 grayscale-[30%]' : 'opacity-90'}`}
-          onError={() => setImgErrors(prev => ({ ...prev, [fotoIndex]: true }))}
-          priority={fotoIndex === 0}
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(7,12,20,0.92)_0%,rgba(7,12,20,0.3)_45%,transparent_100%)]" />
+      {/* ── Hero portada ──────────────────────────────────────── */}
+      <section className="relative w-full overflow-hidden bg-ink-900">
+        {/* Portada principal */}
+        <div className="relative h-[70vh] min-h-[480px] lg:h-[75vh]">
+          <Image
+            src={fotoSrc}
+            alt={proyecto.titulo}
+            fill
+            className={`object-cover transition-all duration-700 ${estado === 'vendido' ? 'opacity-50 grayscale-[40%]' : ''}`}
+            onError={() => setImgErrors(prev => ({ ...prev, [fotoIndex]: true }))}
+            priority={fotoIndex === 0}
+            sizes="100vw"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,48,60,0.15)_0%,rgba(2,48,60,0.05)_30%,rgba(7,12,20,0.55)_70%,rgba(7,12,20,0.95)_100%)]" />
 
-        <Link
-          href="/proyectos"
-          className="absolute top-6 left-6 z-10 flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white border border-white/20 px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20 transition-all"
-        >
-          <FiArrowLeft size={15} />
-          Catálogo
-        </Link>
+          <Link
+            href="/proyectos"
+            className="absolute top-5 left-5 z-10 flex items-center gap-2 bg-black/30 backdrop-blur-md text-white/90 px-4 py-2 rounded-full text-xs font-bold hover:bg-black/50 transition-all"
+          >
+            <FiArrowLeft size={14} />
+            Catálogo
+          </Link>
 
-        <span className={`absolute top-6 right-6 z-10 text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-full border backdrop-blur-sm ${badge.cls}`}>
-          {badge.label}
-        </span>
+          <span className={`absolute top-5 right-5 z-10 text-[11px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full backdrop-blur-md ${badge.cls}`}>
+            {badge.label}
+          </span>
 
-        {listaFotos.length > 1 && (
-          <>
-            <button onClick={anterior} aria-label="Foto anterior"
-              className="absolute left-5 top-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-sm p-3 rounded-full text-white border border-white/20 hover:bg-white/25 transition-all">
-              <FiChevronLeft size={22} />
-            </button>
-            <button onClick={siguiente} aria-label="Foto siguiente"
-              className="absolute right-5 top-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-sm p-3 rounded-full text-white border border-white/20 hover:bg-white/25 transition-all">
-              <FiChevronRight size={22} />
-            </button>
-            <div className="absolute top-[4.5rem] right-6 bg-black/50 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full">
-              {fotoIndex + 1} / {listaFotos.length}
+          {/* Info sobre portada */}
+          <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 lg:px-10 lg:pb-10">
+            <div className="max-w-7xl mx-auto flex flex-col gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="bg-horos-500 text-white text-[10px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-md">
+                  {proyecto.tipo}
+                </span>
+                {esConjunto && proyecto.total_unidades && (
+                  <span className="bg-white/15 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1.5 rounded-md border border-white/20">
+                    <FiHome size={10} className="inline mr-1" />
+                    {proyecto.total_unidades} lotes
+                  </span>
+                )}
+              </div>
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight drop-shadow-lg">
+                {proyecto.titulo}
+              </h1>
+              <p className="flex items-center gap-2 text-white/70 text-sm font-medium">
+                <FiMapPin className="text-horos-300 shrink-0" size={14} />
+                {proyecto.ubicacion}
+              </p>
+
+              {/* Stats inline sobre la portada */}
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-1">
+                {statItems.slice(0, 4).map((item, i) => (
+                  <span key={i} className="flex items-center gap-1.5 text-white/90 text-sm">
+                    <span className="text-horos-300">{item.icon}</span>
+                    <span className="font-black">{item.val}</span>
+                    <span className="text-white/50 text-xs hidden sm:inline">{item.label}</span>
+                  </span>
+                ))}
+                <span className="flex items-baseline gap-1.5 ml-auto">
+                  {proyecto.precio_desde && <span className="text-horos-300 text-sm font-semibold">Desde</span>}
+                  <span className="text-2xl md:text-3xl font-black text-white drop-shadow-lg">S/. {fmt(proyecto.precio)}</span>
+                </span>
+              </div>
             </div>
-          </>
+          </div>
+        </div>
+
+        {/* Galería carrusel */}
+        {listaFotos.length > 1 && (
+          <div className="bg-ink-900/95 backdrop-blur-sm">
+            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-2">
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-none flex-1 py-1">
+                {listaFotos.map((foto, i) => {
+                  const isModelo = i >= modeloStartIndex;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => { setFotoIndex(i); }}
+                      className={`group relative shrink-0 rounded-lg overflow-hidden transition-all duration-200 ${
+                        i === fotoIndex
+                          ? 'ring-2 ring-horos-400 ring-offset-2 ring-offset-ink-900 w-24 h-16'
+                          : 'opacity-50 hover:opacity-90 w-20 h-14'
+                      }`}
+                    >
+                      <Image
+                        src={imgErrors[i] ? proyecto.imagen : foto}
+                        alt={isModelo ? `Modelo ${i - modeloStartIndex + 1}` : `Foto ${i + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="96px"
+                        onError={() => setImgErrors(prev => ({ ...prev, [i]: true }))}
+                      />
+                      {isModelo && (
+                        <div className="absolute bottom-0 inset-x-0 bg-emerald-600/90 text-white text-[7px] font-black text-center py-px uppercase tracking-wider">
+                          Modelo
+                        </div>
+                      )}
+                      {i === 0 && (
+                        <div className="absolute top-0 left-0 bg-horos-500/90 text-white text-[7px] font-black px-1.5 py-px uppercase tracking-wider rounded-br-md">
+                          Portada
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setModalFoto(fotoIndex)}
+                className="shrink-0 flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors border border-white/10"
+              >
+                <FiMaximize2 size={13} />
+                <span className="hidden sm:inline">Ampliar</span>
+              </button>
+            </div>
+          </div>
         )}
-
-        <div className="absolute bottom-0 left-0 right-0 max-w-7xl mx-auto w-full px-8 pb-10 flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="bg-horos-500 text-white text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-sm">
-              {proyecto.tipo}
-            </span>
-            {esConjunto && proyecto.total_unidades && (
-              <span className="bg-white/15 backdrop-blur-sm text-white text-[11px] font-bold px-3 py-1.5 rounded-sm border border-white/20">
-                <FiHome size={10} className="inline mr-1" />
-                {proyecto.total_unidades} lotes
-              </span>
-            )}
-            {proyecto.precio_desde && (
-              <span className="bg-accent-500 text-white text-[11px] font-black px-3 py-1.5 rounded-sm">
-                Desde S/. {fmt(proyecto.precio)}
-              </span>
-            )}
-          </div>
-
-          <h1 className="text-4xl md:text-5xl font-black text-white leading-tight drop-shadow-lg">
-            {proyecto.titulo}
-          </h1>
-          <p className="flex items-center gap-2 text-white/70 text-sm font-medium">
-            <FiMapPin className="text-horos-300 shrink-0" />
-            {proyecto.ubicacion}
-          </p>
-        </div>
       </section>
-
-      {/* ── Stats bar ───────────────────────────────────────────── */}
-      <div className="bg-white border-b border-horos-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-8 py-4 flex flex-wrap justify-between items-center gap-4">
-          <div className="flex flex-wrap gap-6">
-            {statItems.slice(0, 5).map((item, i) => (
-              <span key={i} className="flex items-center gap-2 text-sm">
-                <span className="text-horos-500">{item.icon}</span>
-                <span className="font-black text-ink-800">{item.val}</span>
-                <span className="text-ink-400 text-xs">{item.label}</span>
-              </span>
-            ))}
-          </div>
-          <div className="flex items-baseline gap-2">
-            {proyecto.precio_desde && (
-              <span className="text-xs font-semibold text-ink-400">Desde</span>
-            )}
-            <p className="text-2xl font-black text-accent-500">
-              S/. {fmt(proyecto.precio)}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Galería de miniaturas ───────────────────────────────── */}
-      <div className="bg-white border-b border-ink-100">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex gap-2 overflow-x-auto scrollbar-none">
-          {listaFotos.map((foto, i) => (
-            <button
-              key={i}
-              onClick={() => { setFotoIndex(i); setModalFoto(i); }}
-              aria-label={`Ampliar foto ${i + 1}`}
-              className={`relative shrink-0 w-20 h-14 rounded-lg overflow-hidden border-2 transition-all ${
-                i === fotoIndex
-                  ? 'border-horos-500 opacity-100'
-                  : 'border-transparent opacity-55 hover:opacity-90 hover:border-ink-300'
-              }`}
-            >
-              <Image
-                src={imgErrors[i] ? proyecto.imagen : foto}
-                alt={`Vista ${i + 1}`}
-                fill
-                className="object-cover"
-                sizes="80px"
-                onError={() => setImgErrors(prev => ({ ...prev, [i]: true }))}
-              />
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* ── Main content ────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -513,6 +526,173 @@ export default function FichaProyectoPage() {
                   </li>
                 )}
               </ul>
+            </div>
+          )}
+
+          {listaModelos.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-ink-100 overflow-hidden">
+              <div className="px-6 pt-5 pb-4 border-b border-ink-50 flex items-center gap-2">
+                <span className="w-1 h-5 bg-emerald-500 rounded-full inline-block" />
+                <h3 className="text-ink-900 font-black text-base">Modelos de casas</h3>
+              </div>
+              <div className="p-5 flex flex-col gap-6">
+                {listaModelos.map((m: any, mi: number) => {
+                  const curIdx = modeloFotoIdx[mi] ?? 0;
+                  const imgs: string[] = Array.isArray(m.imagenes) ? m.imagenes : [];
+                  return (
+                    <div key={mi} className="border border-emerald-200 rounded-xl overflow-hidden bg-white">
+                      {/* Carrusel principal */}
+                      {imgs.length > 0 && (
+                        <div className="relative w-full aspect-[16/9] md:aspect-[21/9] bg-ink-900">
+                          <Image src={imgs[curIdx]} alt={`${m.titulo} — imagen ${curIdx + 1}`}
+                            fill className="object-cover" sizes="(max-width: 768px) 100vw, 800px" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                          <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between">
+                            <h4 className="text-white font-black text-lg md:text-xl drop-shadow-lg leading-tight">
+                              {m.titulo || `Modelo ${mi + 1}`}
+                            </h4>
+                            {m.precio && (
+                              <span className="text-white font-black text-base md:text-lg drop-shadow-lg shrink-0 ml-2">
+                                S/. {fmt(m.precio)}
+                              </span>
+                            )}
+                          </div>
+                          {/* Flechas */}
+                          {imgs.length > 1 && (
+                            <>
+                              <button onClick={(e) => { e.stopPropagation(); setModeloFotoIdx(p => ({ ...p, [mi]: curIdx === 0 ? imgs.length - 1 : curIdx - 1 })); }}
+                                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full w-9 h-9 flex items-center justify-center text-lg font-black transition-all backdrop-blur-sm">
+                                ‹
+                              </button>
+                              <button onClick={(e) => { e.stopPropagation(); setModeloFotoIdx(p => ({ ...p, [mi]: curIdx === imgs.length - 1 ? 0 : curIdx + 1 })); }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full w-9 h-9 flex items-center justify-center text-lg font-black transition-all backdrop-blur-sm">
+                                ›
+                              </button>
+                            </>
+                          )}
+                          {/* Contador */}
+                          <div className="absolute top-3 right-3 bg-black/50 text-white text-[10px] font-bold px-2 py-1 rounded-full backdrop-blur-sm">
+                            {curIdx + 1} / {imgs.length}
+                          </div>
+                          {/* Badge ampliar */}
+                          <button onClick={() => setModalModelo({ mi, ii: curIdx })}
+                            className="absolute top-3 left-3 bg-white/20 hover:bg-white/40 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm transition-all flex items-center gap-1">
+                            <FiMaximize2 size={11} /> Ampliar
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Miniaturas */}
+                      {imgs.length > 1 && (
+                        <div className="flex gap-1.5 px-4 py-2.5 overflow-x-auto scrollbar-none bg-ink-50 border-b border-ink-100">
+                          {imgs.map((img: string, ii: number) => (
+                            <button key={ii} onClick={() => setModeloFotoIdx(p => ({ ...p, [mi]: ii }))}
+                              className={`relative shrink-0 w-14 h-10 rounded-lg overflow-hidden border-2 transition-all ${
+                                ii === curIdx ? 'border-emerald-500 ring-2 ring-emerald-300 opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
+                              }`}>
+                              <Image src={img} alt="" fill className="object-cover" sizes="56px" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Datos + descripción */}
+                      <div className="p-4 flex flex-col gap-3">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                          {m.area && (
+                            <span className="flex items-center gap-1 font-semibold text-ink-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                              <FiMaximize2 size={12} className="text-emerald-600" /> {m.area} m²
+                            </span>
+                          )}
+                          {m.dormitorios && (
+                            <span className="flex items-center gap-1 text-ink-600">
+                              <FaBed size={12} className="text-ink-400" /> {m.dormitorios} dorm.
+                            </span>
+                          )}
+                          {m.banos && (
+                            <span className="flex items-center gap-1 text-ink-600">
+                              <FaBath size={12} className="text-ink-400" /> {m.banos} baños
+                            </span>
+                          )}
+                        </div>
+                        {m.descripcion && (
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                            <p className="text-amber-900 text-sm leading-relaxed font-medium">
+                              <span className="text-amber-700 font-black text-[10px] uppercase tracking-wider block mb-1">Descripción del modelo</span>
+                              {m.descripcion}
+                            </p>
+                          </div>
+                        )}
+                        {m.ampliacion && (m.ampliacion.descripcion || m.ampliacion.area || m.ampliacion.pisos || (Array.isArray(m.ampliacion.imagenes) && m.ampliacion.imagenes.length > 0)) && (
+                          <div className="border-t border-slate-100 pt-4 mt-2">
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-5 h-5 rounded-md bg-slate-800 flex items-center justify-center text-[9px] font-black text-white shrink-0">+</div>
+                              <span className="text-slate-700 font-black text-[11px] uppercase tracking-wider">Ampliación de casa</span>
+                            </div>
+                            {(() => {
+                              const ampImgs: string[] = Array.isArray(m.ampliacion.imagenes) ? m.ampliacion.imagenes : [];
+                              const ampCur = ampliacionFotoIdx[mi] ?? 0;
+                              return (
+                                <>
+                                  {ampImgs.length > 0 && (
+                                    <div className="relative w-full aspect-[16/9] bg-ink-900 rounded-lg overflow-hidden">
+                                      <img src={ampImgs[ampCur]} alt="Ampliación"
+                                        className="absolute inset-0 w-full h-full object-cover" />
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                                      {ampImgs.length > 1 && (
+                                        <>
+                                          <button onClick={(e) => { e.stopPropagation(); setAmpliacionFotoIdx(p => ({ ...p, [mi]: ampCur === 0 ? ampImgs.length - 1 : ampCur - 1 })); }}
+                                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full w-8 h-8 flex items-center justify-center text-base font-black transition-all backdrop-blur-sm">‹</button>
+                                          <button onClick={(e) => { e.stopPropagation(); setAmpliacionFotoIdx(p => ({ ...p, [mi]: ampCur === ampImgs.length - 1 ? 0 : ampCur + 1 })); }}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full w-8 h-8 flex items-center justify-center text-base font-black transition-all backdrop-blur-sm">›</button>
+                                        </>
+                                      )}
+                                      <div className="absolute top-3 right-3 bg-black/50 text-white text-[10px] font-bold px-2 py-1 rounded-full backdrop-blur-sm">
+                                        {ampCur + 1} / {ampImgs.length}
+                                      </div>
+                                      <button onClick={() => setModalAmpliacion({ mi, ai: ampCur })}
+                                        className="absolute top-3 left-3 bg-white/20 hover:bg-white/40 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm transition-all flex items-center gap-1">
+                                        <FiMaximize2 size={11} /> Ampliar
+                                      </button>
+                                    </div>
+                                  )}
+                                  {ampImgs.length > 1 && (
+                                    <div className="flex gap-1.5 mt-2 overflow-x-auto scrollbar-none">
+                                      {ampImgs.map((img: string, ai: number) => (
+                                        <button key={ai} onClick={() => setAmpliacionFotoIdx(p => ({ ...p, [mi]: ai }))}
+                                          className={`relative shrink-0 w-14 h-10 rounded-lg overflow-hidden border-2 transition-all ${
+                                            ai === ampCur ? 'border-slate-700 ring-2 ring-slate-300 opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
+                                          }`}>
+                                          <img src={img} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm mt-2">
+                                    {m.ampliacion.area && (
+                                      <span className="flex items-center gap-1 font-semibold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+                                        <FiMaximize2 size={12} /> {m.ampliacion.area} m²
+                                      </span>
+                                    )}
+                                    {m.ampliacion.pisos && (
+                                      <span className="flex items-center gap-1 text-slate-600 font-semibold">
+                                        <FiLayers size={12} /> {m.ampliacion.pisos} pisos
+                                      </span>
+                                    )}
+                                  </div>
+                                  {m.ampliacion.descripcion && (
+                                    <p className="text-slate-700 text-sm leading-relaxed mt-1">{m.ampliacion.descripcion}</p>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -648,19 +828,54 @@ export default function FichaProyectoPage() {
             )}
           </div>
 
+          {/* Landing embebido */}
+          {(proyecto.landing_imagen || proyecto.landing_url) && (
+            <div className="rounded-2xl overflow-hidden border border-ink-100 shadow-sm">
+              {proyecto.landing_titulo && (
+                <div className="px-4 pt-3 pb-1 bg-white border-b border-ink-50">
+                  <p className="text-[10px] font-black text-ink-500 uppercase tracking-widest">{proyecto.landing_titulo}</p>
+                </div>
+              )}
+              {proyecto.landing_imagen && proyecto.landing_url ? (
+                <a href={proyecto.landing_url} target="_blank" rel="noopener noreferrer"
+                  className="block bg-white hover:opacity-90 transition-opacity">
+                  <img src={proyecto.landing_imagen} alt={proyecto.landing_titulo || proyecto.titulo}
+                    className="w-full h-auto object-cover" />
+                </a>
+              ) : proyecto.landing_url ? (
+                <a href={proyecto.landing_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 p-4 bg-white text-horos-600 font-bold text-sm hover:text-horos-700 transition-colors">
+                  <FiExternalLink size={14} /> {proyecto.landing_url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                </a>
+              ) : null}
+            </div>
+          )}
+
           {/* Ficha técnica */}
           <div className="bg-white rounded-2xl shadow-sm border border-ink-100 p-5">
             <p className="text-horos-600 text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5">
               <FaBuilding size={10} /> Ficha técnica
             </p>
 
-            {/* Descarga automática */}
-            <button
-              onClick={() => generarFichaPDF(proyecto)}
-              className="w-full flex items-center justify-center gap-2 text-sm font-bold text-white bg-horos-600 hover:bg-horos-500 active:scale-95 py-2.5 px-4 rounded-xl transition-all mb-4"
-            >
-              <FiDownload size={14} /> Descargar ficha técnica (PDF)
-            </button>
+            <div className="flex flex-col gap-2">
+              <button onClick={() => generarFichaPDF(proyecto)}
+                className="w-full flex items-center justify-center gap-2 text-sm font-bold text-white bg-horos-600 hover:bg-horos-500 active:scale-95 py-2.5 px-4 rounded-xl transition-all">
+                <FiDownload size={14} /> Ficha técnica
+              </button>
+
+              {proyecto.ficha_tecnica_url && (
+                <a href={proyecto.ficha_tecnica_url} target="_blank" rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-horos-700 bg-horos-50 border border-horos-200 hover:bg-horos-100 py-2.5 px-4 rounded-xl transition-all">
+                  <FiDownload size={13} /> {proyecto.ficha_tecnica_label || 'Ficha técnica'}
+                </a>
+              )}
+              {proyecto.ficha_tecnica_2_url && (
+                <a href={proyecto.ficha_tecnica_2_url} target="_blank" rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-horos-700 bg-horos-50 border border-horos-200 hover:bg-horos-100 py-2.5 px-4 rounded-xl transition-all">
+                  <FiDownload size={13} /> {proyecto.ficha_tecnica_2_label || 'Brochure'}
+                </a>
+              )}
+            </div>
 
             <ul className="space-y-2.5 text-sm divide-y divide-ink-50">
               <li className="flex justify-between items-center py-1.5">
@@ -718,11 +933,6 @@ export default function FichaProyectoPage() {
 
         </div>
       </div>
-
-      {/* ── Landing Proveedor (full-width) ──────────────────────── */}
-      {proyecto.landing_proveedor === 'neptuno' && (
-        <LandingNeptuno proyecto={proyecto} areaEfectiva={areaEfectiva} esLote={esLote} />
-      )}
 
       {/* ── Modal lightbox ──────────────────────────────────────── */}
       {modalFoto !== null && (
@@ -783,26 +993,106 @@ export default function FichaProyectoPage() {
 
           {/* Miniaturas en el modal */}
           {listaFotos.length > 1 && (
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-              {listaFotos.map((foto, i) => (
-                <button
-                  key={i}
-                  onClick={(e) => { e.stopPropagation(); setModalFoto(i); }}
-                  className={`relative w-12 h-9 rounded overflow-hidden border-2 transition-all ${
-                    i === modalFoto ? 'border-white opacity-100' : 'border-white/20 opacity-40 hover:opacity-75'
-                  }`}
-                >
-                  <Image
-                    src={imgErrors[i] ? proyecto.imagen : foto}
-                    alt={`Vista ${i + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="48px"
-                  />
-                </button>
-              ))}
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10 max-w-[90vw] overflow-x-auto scrollbar-none px-2">
+              {listaFotos.map((foto, i) => {
+                const isModelo = i >= modeloStartIndex;
+                return (
+                  <button
+                    key={i}
+                    onClick={(e) => { e.stopPropagation(); setModalFoto(i); }}
+                    className={`relative shrink-0 w-14 h-10 rounded-lg overflow-hidden border-2 transition-all ${
+                      i === modalFoto ? 'border-white opacity-100 scale-110' : 'border-white/20 opacity-40 hover:opacity-75'
+                    }`}
+                  >
+                    <Image
+                      src={imgErrors[i] ? proyecto.imagen : foto}
+                      alt={isModelo ? `Modelo ${i - modeloStartIndex + 1}` : `Vista ${i + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="56px"
+                    />
+                    {isModelo && (
+                      <div className="absolute bottom-0 inset-x-0 bg-emerald-600/90 text-white text-[6px] font-black text-center uppercase">
+                        Modelo
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Modal lightbox de modelo ──────────────────────────── */}
+      {modalModelo !== null && (
+        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+          onClick={() => setModalModelo(null)}>
+          <button className="absolute top-5 right-5 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-all z-10"
+            onClick={() => setModalModelo(null)}>
+            <FiX size={20} />
+          </button>
+          <div className="absolute top-5 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs font-bold px-3 py-1.5 rounded-full z-10 select-none">
+            {listaModelos[modalModelo.mi]?.titulo || 'Modelo'} · {modalModelo.ii + 1} / {listaModelos[modalModelo.mi]?.imagenes?.length}
+          </div>
+          {listaModelos[modalModelo.mi]?.imagenes?.length > 1 && (
+            <>
+              <button className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/25 p-3 rounded-full transition-all z-10"
+                onClick={(e) => { e.stopPropagation(); setModalModelo(p => p ? { ...p, ii: p.ii === 0 ? listaModelos[p.mi].imagenes.length - 1 : p.ii - 1 } : null); }}>
+                <FiChevronLeft size={26} />
+              </button>
+              <button className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/25 p-3 rounded-full transition-all z-10"
+                onClick={(e) => { e.stopPropagation(); setModalModelo(p => p ? { ...p, ii: p.ii === listaModelos[p.mi].imagenes.length - 1 ? 0 : p.ii + 1 } : null); }}>
+                <FiChevronRight size={26} />
+              </button>
+            </>
+          )}
+          <div className="relative w-full max-w-5xl h-[85vh] px-16" onClick={e => e.stopPropagation()}>
+            <Image
+              src={listaModelos[modalModelo.mi]?.imagenes[modalModelo.ii]}
+              alt={`${listaModelos[modalModelo.mi]?.titulo} ${modalModelo.ii + 1}`}
+              fill className="object-contain" sizes="(max-width: 1280px) 100vw, 1280px" />
+          </div>
+        </div>
+      )}
+
+      {modalAmpliacion !== null && (
+        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+          onClick={() => setModalAmpliacion(null)}>
+          <button className="absolute top-5 right-5 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-all z-10"
+            onClick={() => setModalAmpliacion(null)}>
+            <FiX size={20} />
+          </button>
+          <div className="absolute top-5 left-1/2 -translate-x-1/2 bg-black/60 text-amber-300 text-xs font-bold px-3 py-1.5 rounded-full z-10 select-none flex items-center gap-2">
+            <span className="w-3.5 h-3.5 rounded bg-amber-500/30 flex items-center justify-center text-[8px] font-black text-amber-300">+</span>
+            Ampliación de casa · {modalAmpliacion.ai + 1} / {(listaModelos[modalAmpliacion.mi] as any)?.ampliacion?.imagenes?.length}
+          </div>
+          {(listaModelos[modalAmpliacion.mi] as any)?.ampliacion?.imagenes?.length > 1 && (
+            <>
+              <button className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/25 p-3 rounded-full transition-all z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const imgs = (listaModelos[modalAmpliacion.mi] as any)?.ampliacion?.imagenes || [];
+                  setModalAmpliacion(p => p ? { ...p, ai: p.ai === 0 ? imgs.length - 1 : p.ai - 1 } : null);
+                }}>
+                <FiChevronLeft size={26} />
+              </button>
+              <button className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/25 p-3 rounded-full transition-all z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const imgs = (listaModelos[modalAmpliacion.mi] as any)?.ampliacion?.imagenes || [];
+                  setModalAmpliacion(p => p ? { ...p, ai: p.ai === imgs.length - 1 ? 0 : p.ai + 1 } : null);
+                }}>
+                <FiChevronRight size={26} />
+              </button>
+            </>
+          )}
+          <div className="relative w-full max-w-5xl h-[85vh] px-16" onClick={e => e.stopPropagation()}>
+            <Image
+              src={(listaModelos[modalAmpliacion.mi] as any)?.ampliacion?.imagenes[modalAmpliacion.ai]}
+              alt="Ampliación de casa"
+              fill className="object-contain" sizes="(max-width: 1280px) 100vw, 1280px" />
+          </div>
         </div>
       )}
     </div>

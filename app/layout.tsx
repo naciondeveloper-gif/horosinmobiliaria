@@ -3,6 +3,7 @@ import './globals.css';
 import Image from 'next/image';
 import { DM_Sans, Montserrat } from 'next/font/google';
 import NavBar from '@/components/NavBar';
+import LayoutShell from '@/components/LayoutShell';
 import { WhatsAppProvider } from '@/context/WhatsAppContext';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import {
@@ -39,11 +40,10 @@ export default function RootLayout({
     <html lang="es" className={`${montserrat.variable} ${dmSans.variable}`}>
       <body className="antialiased flex flex-col min-h-screen bg-ink-50">
         <WhatsAppProvider>
-        <NavBar />
-      <main className="flex-1">{children}</main>
-
-        {/* ── Footer ──────────────────────────────────── */}
-        <footer className="print:hidden bg-ink-900 text-white mt-auto">
+        <LayoutShell
+          navbar={<NavBar />}
+          footer={
+            <footer className="print:hidden bg-ink-900 text-white mt-auto">
 
           {/* Franja superior */}
           <div className="border-b border-white/8">
@@ -158,7 +158,11 @@ export default function RootLayout({
             <p>&copy; {new Date().getFullYear()} Horos Inmobiliaria. Todos los derechos reservados.</p>
             <p>RUC: 20560049391 · HOROS INMOBILIARIA S.A.C.</p>
           </div>
-        </footer>
+            </footer>
+          }
+        >
+          <main className="flex-1">{children}</main>
+        </LayoutShell>
 
         <WhatsAppButton />
         </WhatsAppProvider>

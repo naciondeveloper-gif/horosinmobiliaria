@@ -67,8 +67,15 @@ export async function POST(request: Request) {
         video_url:            str(b.video_url),
         imagen_mapa:          str(b.imagen_mapa),
         mapa_embed_src:       str(b.mapa_embed_src),
+        modelos:              arr(b.modelos),
         landing_proveedor:    str(b.landing_proveedor),
-        ficha_tecnica_url:    str(b.ficha_tecnica_url),
+        landing_url:          str(b.landing_url),
+        landing_imagen:       str(b.landing_imagen),
+        landing_titulo:       str(b.landing_titulo),
+        ficha_tecnica_url:     str(b.ficha_tecnica_url),
+        ficha_tecnica_label:   str(b.ficha_tecnica_label),
+        ficha_tecnica_2_url:   str(b.ficha_tecnica_2_url),
+        ficha_tecnica_2_label: str(b.ficha_tecnica_2_label),
       }])
       .select()
       .single();

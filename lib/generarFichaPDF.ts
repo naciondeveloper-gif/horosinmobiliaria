@@ -4,6 +4,8 @@ function fmt(n: number) {
   return n.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
+
+
 // Colores Horos
 const C = {
   dark:    [2,   48,  60]  as [number, number, number],
@@ -69,12 +71,7 @@ export async function generarFichaPDF(proyecto: Proyecto) {
   doc.text(titulo, margin, y);
   y += titulo.length * 7;
 
-  // Tipo + estado
-  const estado = proyecto.estado ?? 'disponible';
-  const estadoLabel = estado === 'disponible' ? 'DISPONIBLE' : estado === 'reservado' ? 'RESERVADO' : 'VENDIDO';
-  const estadoColor: [number, number, number] =
-    estado === 'disponible' ? C.green : estado === 'reservado' ? C.orange : C.gray2;
-
+  // Tipo
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(...C.white);
@@ -82,18 +79,7 @@ export async function generarFichaPDF(proyecto: Proyecto) {
   doc.roundedRect(margin, y, 28, 6, 1, 1, 'F');
   doc.text(proyecto.tipo.toUpperCase(), margin + 14, y + 4.2, { align: 'center' });
 
-  doc.setFillColor(...estadoColor);
-  doc.roundedRect(margin + 31, y, 28, 6, 1, 1, 'F');
-  doc.text(estadoLabel, margin + 45, y + 4.2, { align: 'center' });
-
-  y += 10;
-
-  // Referencia
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(...C.gray2);
-  doc.text(`Ref. #${proyecto.id.toString().slice(0, 8)}`, margin, y);
-  y += 5;
+  y += 8;
 
   // Ubicación
   doc.setFont('helvetica', 'bold');
@@ -280,8 +266,102 @@ export async function generarFichaPDF(proyecto: Proyecto) {
     y += chipH + 6;
   }
 
+  // ── Sección: Modelos ────────────────────────────────────────────────────
+  const modelosList = Array.isArray(proyecto.modelos) ? (proyecto.modelos as any[]) : [];
+  if (modelosList.length > 0) {
+    for (const [mi, m] of modelosList.entries()) {
+      if (y > 200) { doc.addPage(); y = 20; }
+
+      doc.setFillColor(...C.dark);
+      doc.rect(margin, y, W - margin * 2, 7, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...C.white);
+      doc.text(`MODELO ${mi + 1}: ${(m.titulo || '').toUpperCase()}`, margin + 3, y + 5);
+      y += 10;
+
+      const mSpecs: Dato[] = [
+        m.area        ? { label: 'Area',     valor: `${m.area} m2` } : null,
+        m.dormitorios ? { label: 'Dorm.',    valor: String(m.dormitorios) } : null,
+        m.banos       ? { label: 'Banos',    valor: String(m.banos) } : null,
+        m.precio      ? { label: 'Precio',   valor: `S/. ${fmt(m.precio)}` } : null,
+      ].filter(Boolean) as Dato[];
+
+      const cols = Math.min(mSpecs.length, 4);
+      const cw = cols > 0 ? (W - margin * 2 - (cols - 1) * 3) / cols : 0;
+      for (let col = 0; col < cols; col++) {
+        const x = margin + col * (cw + 3);
+        doc.setFillColor(...C.gray1);
+        doc.rect(x, y, cw, 11, 'F');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(...C.gray2);
+        doc.text(mSpecs[col].label.toUpperCase(), x + 3, y + 4);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...C.dark);
+        doc.text(mSpecs[col].valor, x + 3, y + 9.5);
+      }
+      y += 14;
+
+      if (m.descripcion) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...C.textSub);
+        const mDesc = doc.splitTextToSize(m.descripcion, W - margin * 2);
+        doc.text(mDesc, margin, y);
+        y += mDesc.length * 4.5 + 3;
+      }
+
+      const amp = m.ampliacion;
+      if (amp && (amp.descripcion || amp.area || amp.pisos)) {
+        if (y > 210) { doc.addPage(); y = 20; }
+        doc.setFillColor(...C.gray1);
+        doc.roundedRect(margin, y, W - margin * 2, 6, 1, 1, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(...C.dark);
+        doc.text('AMPLIACION / PROYECCION', margin + 3, y + 4.2);
+        y += 9;
+
+        const ampSpecs: Dato[] = [
+          amp.area  ? { label: 'Area ampliacion', valor: `${amp.area} m2` } : null,
+          amp.pisos ? { label: 'Pisos proy.',     valor: String(amp.pisos) } : null,
+        ].filter(Boolean) as Dato[];
+
+        if (ampSpecs.length > 0) {
+          for (let col = 0; col < ampSpecs.length; col++) {
+            const x = margin + col * ((W - margin * 2) / 3);
+            doc.setFillColor(...C.gray1);
+            doc.rect(x, y, (W - margin * 2) / 3 - 2, 9, 'F');
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(6.5);
+            doc.setTextColor(...C.gray2);
+            doc.text(ampSpecs[col].label.toUpperCase(), x + 2, y + 3);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.setTextColor(...C.dark);
+            doc.text(ampSpecs[col].valor, x + 2, y + 8);
+          }
+          y += 12;
+        }
+
+        if (amp.descripcion) {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(...C.textSub);
+          const aDesc = doc.splitTextToSize(amp.descripcion, W - margin * 2);
+          doc.text(aDesc, margin, y);
+          y += aDesc.length * 4.5 + 2;
+        }
+      }
+      y += 3;
+    }
+  }
+
   // ── Descripción ──────────────────────────────────────────────────────
   if (proyecto.descripcion) {
+    if (y > 220) { doc.addPage(); y = 20; }
     doc.setFillColor(...C.gray1);
     doc.rect(margin, y, W - margin * 2, 7, 'F');
     doc.setFont('helvetica', 'bold');

@@ -32,6 +32,32 @@ export interface Proyecto {
   video_url?: string;
   imagen_mapa?: string;        // URL de imagen estática del mapa/plano de ubicación
   mapa_embed_src?: string;     // src del iframe de Google Maps personalizado
+  modelos?: ModeloData[];      // modelos de casas con datos estructurados
   landing_proveedor?: string;  // 'neptuno' | null — activa la sección inmersiva del proveedor
+  landing_url?: string;        // URL a la que redirige el landing embebido
+  landing_imagen?: string;     // URL de la imagen del landing embebido
+  landing_titulo?: string;     // título del landing embebido
   ficha_tecnica_url?: string;  // URL al PDF descargable de la ficha técnica
+  ficha_tecnica_label?: string; // etiqueta del PDF (ej. "Brochure", "Planos")
+  ficha_tecnica_2_url?: string; // URL al segundo PDF descargable
+  ficha_tecnica_2_label?: string; // etiqueta del segundo PDF (ej. "Brochure", "Planos")
+}
+
+export interface ModeloAmpliacion {
+  descripcion?: string;
+  area?: number;
+  pisos?: number;
+  imagenes: string[];
+}
+
+export interface ModeloData {
+  titulo: string;
+  descripcion?: string;
+  precio?: number;
+  area?: number;
+  dormitorios?: number;
+  banos?: number;
+  portada?: string;
+  imagenes: string[];
+  ampliacion?: ModeloAmpliacion;
 }
