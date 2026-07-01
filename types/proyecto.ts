@@ -43,11 +43,18 @@ export interface Proyecto {
   ficha_tecnica_2_label?: string; // etiqueta del segundo PDF (ej. "Brochure", "Planos")
 }
 
+export interface ResumenAreaFila {
+  label: string;
+  valor: string;
+  resaltar?: boolean;
+}
+
 export interface ModeloAmpliacion {
   descripcion?: string;
   area?: number;
   pisos?: number;
   imagenes: string[];
+  resumen_areas?: ResumenAreaFila[];
 }
 
 export interface ModeloData {

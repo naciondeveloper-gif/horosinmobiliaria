@@ -4,15 +4,18 @@ import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Proyecto } from '@/types/proyecto';
+import { Proyecto, ModeloAmpliacion } from '@/types/proyecto';
 import { supabase } from '@/lib/supabase';
 import {
   FiChevronLeft, FiChevronRight, FiMapPin, FiArrowLeft,
   FiExternalLink, FiPhone, FiMaximize2, FiCalendar, FiLayers, FiHome,
-  FiDownload, FiX,
+  FiDownload, FiX, FiShield, FiWifi, FiClock, FiDroplet, FiSun,
+  FiUsers, FiArrowUp, FiPackage, FiTool, FiTruck, FiZap,
 } from 'react-icons/fi';
 import {
   FaBed, FaBath, FaBuilding, FaCar, FaWhatsapp, FaCheck,
+  FaSwimmingPool, FaTree, FaDumbbell, FaFire, FaChild, FaLeaf, FaDog,
+  FaParking, FaUmbrellaBeach,
 } from 'react-icons/fa';
 import WhatsAppProjectSync from '@/components/WhatsAppProjectSync';
 import { generarFichaPDF } from '@/lib/generarFichaPDF';
@@ -194,6 +197,32 @@ function LandingNeptuno({ proyecto, areaEfectiva, esLote }: {
   );
 }
 
+// ── Keyword → icon mapping for amenities ────────────────────────────
+function getAmenityIcon(name: string) {
+  const n = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  if (n.includes('piscina') || n.includes('pool') || n.includes('natacion')) return <FaSwimmingPool size={18} />;
+  if (n.includes('seguridad') || n.includes('vigilancia') || n.includes('camara') || n.includes('cctv')) return <FiShield size={18} />;
+  if (n.includes('garaje') || n.includes('estacionamiento') || n.includes('cochera') || n.includes('parking')) return <FaCar size={18} />;
+  if (n.includes('area verde') || n.includes('jardin') || n.includes('parque') || n.includes('verde')) return <FaTree size={18} />;
+  if (n.includes('hoja') || n.includes('planta') || n.includes('arbol')) return <FaLeaf size={18} />;
+  if (n.includes('gimnasio') || n.includes('gym') || n.includes('fitness') || n.includes('ejercicio')) return <FaDumbbell size={18} />;
+  if (n.includes('wifi') || n.includes('internet') || n.includes('fibra') || n.includes('banda')) return <FiWifi size={18} />;
+  if (n.includes('24') || n.includes('horas') || n.includes('noche')) return <FiClock size={18} />;
+  if (n.includes('lavander') || n.includes('lavado')) return <FiDroplet size={18} />;
+  if (n.includes('ascensor') || n.includes('elevador')) return <FiArrowUp size={18} />;
+  if (n.includes('terraza') || n.includes('azotea') || n.includes('rooftop') || n.includes('solair')) return <FiSun size={18} />;
+  if (n.includes('salon') || n.includes('reunion') || n.includes('evento') || n.includes('cowork')) return <FiUsers size={18} />;
+  if (n.includes('parrilla') || n.includes('bbq') || n.includes('asado') || n.includes('grill') || n.includes('fogon')) return <FaFire size={18} />;
+  if (n.includes('juego') || n.includes('nino') || n.includes('infantil') || n.includes('kids')) return <FaChild size={18} />;
+  if (n.includes('playa') || n.includes('mar') || n.includes('verano')) return <FaUmbrellaBeach size={18} />;
+  if (n.includes('perro') || n.includes('mascota') || n.includes('pet') || n.includes('animal')) return <FaDog size={18} />;
+  if (n.includes('portero') || n.includes('recepcion') || n.includes('conserje') || n.includes('admin')) return <FiUsers size={18} />;
+  if (n.includes('camion') || n.includes('mudanza') || n.includes('transporte')) return <FiTruck size={18} />;
+  if (n.includes('manten') || n.includes('servicio') || n.includes('tecnico')) return <FiTool size={18} />;
+  if (n.includes('gas') || n.includes('agua') || n.includes('luz') || n.includes('electricid')) return <FiZap size={18} />;
+  return <FiPackage size={18} />;
+}
+
 // ── Página principal ─────────────────────────────────────────────────
 export default function FichaProyectoPage() {
   const params = useParams();
@@ -201,13 +230,18 @@ export default function FichaProyectoPage() {
 
   const [proyecto, setProyecto] = useState<Proyecto | null>(null);
   const [loading, setLoading] = useState(true);
-  const [fotoIndex, setFotoIndex] = useState(0);
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
   const [modalFoto, setModalFoto] = useState<number | null>(null);
   const [modalModelo, setModalModelo] = useState<{ mi: number; ii: number } | null>(null);
   const [modalAmpliacion, setModalAmpliacion] = useState<{ mi: number; ai: number } | null>(null);
   const [modeloFotoIdx, setModeloFotoIdx] = useState<Record<number, number>>({});
   const [ampliacionFotoIdx, setAmpliacionFotoIdx] = useState<Record<number, number>>({});
+  const [selectedGallery, setSelectedGallery] = useState<number | null>(null);
+  const [gallerySubIdx, setGallerySubIdx] = useState<Record<number, number>>({});
+  const [galleryFullscreen, setGalleryFullscreen] = useState<string | null>(null);
+  const [ctaForm, setCtaForm] = useState({ nombre: '', telefono: '', mensaje: '' });
+  const [ctaTerminos, setCtaTerminos] = useState(false);
+  const [ctaEnviado, setCtaEnviado] = useState(false);
 
   useEffect(() => {
     if (!ruta) return;
@@ -250,6 +284,10 @@ export default function FichaProyectoPage() {
     return () => window.removeEventListener('keydown', handleKey);
   }, [modalFoto, proyecto]);
 
+  useEffect(() => {
+    if (proyecto) setSelectedGallery(0);
+  }, [proyecto]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-ink-50 animate-fade-in">
@@ -291,17 +329,22 @@ export default function FichaProyectoPage() {
   const modalSiguiente = () =>
     setModalFoto(p => p === null ? null : (p === listaFotos.length - 1 ? 0 : p + 1));
 
-  const mapaUrl = `https://maps.google.com/maps?q=${encodeURIComponent(
-    proyecto.ubicacion + ', Perú'
-  )}&t=m&z=15&output=embed&iwloc=near`;
-
   const estado = (proyecto.estado ?? 'disponible') as Estado;
   const badge  = ESTADO_BADGE[estado] ?? ESTADO_BADGE.disponible;
 
   const whatsappMsg  = `Hola, vi el inmueble *"${proyecto.titulo}"* en *${proyecto.ubicacion}* (Ref. #${proyecto.id}) en horosinmobiliaria.com y me gustaría recibir más información. ¿Me pueden orientar?`;
   const whatsappHref = `https://wa.me/${HOROS_PHONE}?text=${encodeURIComponent(whatsappMsg)}`;
 
-  const fotoSrc = imgErrors[fotoIndex] ? proyecto.imagen : listaFotos[fotoIndex];
+  const handleCtaSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ctaTerminos || !ctaForm.nombre || !ctaForm.telefono) return;
+    const msg = `Hola, me interesa el proyecto *"${proyecto.titulo}"* en ${proyecto.ubicacion}.\n\n*Nombre:* ${ctaForm.nombre}\n*Teléfono:* ${ctaForm.telefono}${ctaForm.mensaje ? `\n*Mensaje:* ${ctaForm.mensaje}` : ''}\n\n_(Desde horosinmobiliaria.com)_`;
+    window.open(`https://wa.me/${HOROS_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
+    setCtaEnviado(true);
+    setTimeout(() => { setCtaEnviado(false); setCtaForm({ nombre: '', telefono: '', mensaje: '' }); setCtaTerminos(false); }, 5000);
+  };
+
+  const fotoSrc = imgErrors[0] ? proyecto.imagen : galeriaFotos[0];
   const esLote  = /lote|terreno|conjunto/i.test(proyecto.tipo);
   const esConjunto = /conjunto/i.test(proyecto.tipo);
 
@@ -340,21 +383,66 @@ export default function FichaProyectoPage() {
     },,
   ].filter(Boolean) as { icon: React.ReactNode; val: string; label: string }[];
 
+  type GalleryItem = { imagenes: string[]; label: string; specs: typeof statItems; isModel?: boolean; isAmpliacion?: boolean; resumenAreas?: { label: string; valor: string; resaltar?: boolean }[] };
+  const galleryItems: GalleryItem[] = [
+    ...galeriaFotos.slice(1).map((src, i) => ({
+      imagenes: [src],
+      label: `Vista ${i + 1}`,
+      specs: statItems,
+    })),
+    ...listaModelos.flatMap((m: any, mi: number) => {
+      const modelLabel = m.titulo || `Modelo ${mi + 1}`;
+      const modelSpecs = [
+        m.area        && { icon: <FiMaximize2 className="text-emerald-500" />, val: `${m.area} m²`,       label: 'Área' },
+        m.dormitorios && { icon: <FaBed       className="text-emerald-500" />, val: String(m.dormitorios), label: 'Dormitorios' },
+        m.banos       && { icon: <FaBath      className="text-emerald-500" />, val: String(m.banos),       label: 'Baños' },
+      ].filter(Boolean) as typeof statItems;
+
+      const ampliacion = m.ampliacion as ModeloAmpliacion | undefined;
+      const ampSpecs = [
+        ampliacion?.area  && { icon: <FiMaximize2 className="text-slate-500" />, val: `${ampliacion.area} m²`, label: 'Área ampliada' },
+        ampliacion?.pisos && { icon: <FiLayers    className="text-slate-500" />, val: String(ampliacion.pisos), label: 'Pisos' },
+      ].filter(Boolean) as typeof statItems;
+
+      const modelImgs: string[] = Array.isArray(m.imagenes) && m.imagenes.length > 0 ? m.imagenes : [proyecto.imagen];
+      const ampImgs: string[]   = Array.isArray(ampliacion?.imagenes) && ampliacion!.imagenes!.length > 0 ? ampliacion!.imagenes! : [];
+
+      const items: GalleryItem[] = [
+        {
+          imagenes: modelImgs,
+          label: modelLabel,
+          specs: modelSpecs.length > 0 ? modelSpecs : statItems,
+          isModel: true,
+        },
+      ];
+      if (ampImgs.length > 0) {
+        items.push({
+          imagenes: ampImgs,
+          label: `Proyección — ${modelLabel}`,
+          specs: ampSpecs.length > 0 ? ampSpecs : modelSpecs.length > 0 ? modelSpecs : statItems,
+          isModel: true,
+          isAmpliacion: true,
+          resumenAreas: Array.isArray(ampliacion?.resumen_areas) ? ampliacion!.resumen_areas : undefined,
+        });
+      }
+      return items;
+    }),
+  ];
+
   return (
-    <div className="bg-ink-50 min-h-screen">
+    <div className="bg-white min-h-screen">
       <WhatsAppProjectSync proyecto={proyecto} />
 
-      {/* ── Hero portada ──────────────────────────────────────── */}
+      {/* ── Hero portada — imagen única ───────────────────────── */}
       <section className="relative w-full overflow-hidden bg-ink-900">
-        {/* Portada principal */}
         <div className="relative h-[70vh] min-h-[480px] lg:h-[75vh]">
           <Image
             src={fotoSrc}
             alt={proyecto.titulo}
             fill
-            className={`object-cover transition-all duration-700 ${estado === 'vendido' ? 'opacity-50 grayscale-[40%]' : ''}`}
-            onError={() => setImgErrors(prev => ({ ...prev, [fotoIndex]: true }))}
-            priority={fotoIndex === 0}
+            className={`object-cover ${estado === 'vendido' ? 'opacity-50 grayscale-[40%]' : ''}`}
+            onError={() => setImgErrors(prev => ({ ...prev, [0]: true }))}
+            priority
             sizes="100vw"
           />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,48,60,0.15)_0%,rgba(2,48,60,0.05)_30%,rgba(7,12,20,0.55)_70%,rgba(7,12,20,0.95)_100%)]" />
@@ -371,7 +459,6 @@ export default function FichaProyectoPage() {
             {badge.label}
           </span>
 
-          {/* Info sobre portada */}
           <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 lg:px-10 lg:pb-10">
             <div className="max-w-7xl mx-auto flex flex-col gap-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -392,135 +479,365 @@ export default function FichaProyectoPage() {
                 <FiMapPin className="text-horos-300 shrink-0" size={14} />
                 {proyecto.ubicacion}
               </p>
-
-              {/* Stats inline sobre la portada */}
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-1">
-                {statItems.slice(0, 4).map((item, i) => (
-                  <span key={i} className="flex items-center gap-1.5 text-white/90 text-sm">
-                    <span className="text-horos-300">{item.icon}</span>
-                    <span className="font-black">{item.val}</span>
-                    <span className="text-white/50 text-xs hidden sm:inline">{item.label}</span>
-                  </span>
-                ))}
-                <span className="flex items-baseline gap-1.5 ml-auto">
-                  {proyecto.precio_desde && <span className="text-horos-300 text-sm font-semibold">Desde</span>}
-                  <span className="text-2xl md:text-3xl font-black text-white drop-shadow-lg">S/. {fmt(proyecto.precio)}</span>
-                </span>
+              <div className="flex items-baseline gap-1.5 mt-1">
+                {proyecto.precio_desde && <span className="text-horos-300 text-sm font-semibold">Desde</span>}
+                <span className="text-2xl md:text-3xl font-black text-white drop-shadow-lg">S/. {fmt(proyecto.precio)}</span>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Galería carrusel */}
-        {listaFotos.length > 1 && (
-          <div className="bg-ink-900/95 backdrop-blur-sm">
-            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-2">
-              <div className="flex gap-1.5 overflow-x-auto scrollbar-none flex-1 py-1">
-                {listaFotos.map((foto, i) => {
-                  const isModelo = i >= modeloStartIndex;
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => { setFotoIndex(i); }}
-                      className={`group relative shrink-0 rounded-lg overflow-hidden transition-all duration-200 ${
-                        i === fotoIndex
-                          ? 'ring-2 ring-horos-400 ring-offset-2 ring-offset-ink-900 w-24 h-16'
-                          : 'opacity-50 hover:opacity-90 w-20 h-14'
-                      }`}
-                    >
-                      <Image
-                        src={imgErrors[i] ? proyecto.imagen : foto}
-                        alt={isModelo ? `Modelo ${i - modeloStartIndex + 1}` : `Foto ${i + 1}`}
-                        fill
-                        className="object-cover"
-                        sizes="96px"
-                        onError={() => setImgErrors(prev => ({ ...prev, [i]: true }))}
-                      />
-                      {isModelo && (
-                        <div className="absolute bottom-0 inset-x-0 bg-emerald-600/90 text-white text-[7px] font-black text-center py-px uppercase tracking-wider">
-                          Modelo
-                        </div>
-                      )}
-                      {i === 0 && (
-                        <div className="absolute top-0 left-0 bg-horos-500/90 text-white text-[7px] font-black px-1.5 py-px uppercase tracking-wider rounded-br-md">
-                          Portada
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              <button
-                onClick={() => setModalFoto(fotoIndex)}
-                className="shrink-0 flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors border border-white/10"
-              >
-                <FiMaximize2 size={13} />
-                <span className="hidden sm:inline">Ampliar</span>
-              </button>
-            </div>
-          </div>
-        )}
       </section>
 
-      {/* ── Main content ────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-10">
-
-        {/* ── Left column ─────────────────────────────────────── */}
-        <div className="lg:col-span-2 flex flex-col gap-7">
-
-          {statItems.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm border border-ink-100 overflow-hidden">
-              <div className="px-6 pt-5 pb-4 border-b border-ink-50 flex items-center gap-2">
-                <span className="w-1 h-5 bg-horos-500 rounded-full inline-block" />
-                <h3 className="text-ink-900 font-black text-base">Características del Inmueble</h3>
-              </div>
-              <div className="p-5 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {statItems.map((item, i) => (
-                  <div key={i} className="bg-ink-50 rounded-xl p-4 flex flex-col items-center gap-1.5 border border-ink-100 hover:border-horos-200 transition-colors">
-                    <div className="text-horos-500 text-xl">{item.icon}</div>
-                    <p className="text-xl font-black text-ink-900">{item.val}</p>
-                    <p className="text-[11px] text-ink-400 font-semibold uppercase tracking-wide text-center">{item.label}</p>
+      {/* ── Características del inmueble — stat bar ── */}
+      {statItems.length > 0 && (
+        <div className="bg-white border-b border-ink-100/60">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex items-stretch overflow-x-auto scrollbar-none divide-x divide-ink-100/70">
+              {statItems.map((item, i) => (
+                <div key={i} className="flex items-center gap-3 px-7 py-4 first:pl-0 shrink-0">
+                  <div className="text-horos-500 text-lg">{item.icon}</div>
+                  <div className="flex flex-col leading-tight">
+                    <span className="font-black text-ink-900 text-base tracking-tight">{item.val}</span>
+                    <span className="text-[10px] text-ink-400 font-semibold uppercase tracking-widest mt-0.5">{item.label}</span>
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Galería interactiva + Características en una vista ── */}
+      {galleryItems.length > 0 && (
+        <section className="bg-stone-100 border-y border-stone-200">
+          <div className="max-w-7xl mx-auto px-6 pt-10 pb-8">
+
+            {/* Header editorial */}
+            <div className="mb-8">
+              <p className="text-horos-500 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Vistas del proyecto</p>
+              <div className="flex items-baseline gap-3">
+                <h2 className="text-ink-900 font-black text-3xl lg:text-4xl uppercase tracking-tight leading-none">Galería</h2>
+                <span className="text-ink-400 font-light text-lg italic">del proyecto</span>
               </div>
             </div>
-          )}
+
+            {/* Layout 2 columnas: visor + características */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+
+              {/* Visor imagen (2/3) */}
+              <div className="lg:col-span-2">
+                {selectedGallery !== null ? (() => {
+                  const item = galleryItems[selectedGallery];
+                  const subIdx = gallerySubIdx[selectedGallery] ?? 0;
+                  const currentSrc = item.imagenes[subIdx] ?? item.imagenes[0];
+                  const hasMultiple = item.imagenes.length > 1;
+                  return (
+                    <div className="flex flex-col gap-2">
+                      <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-ink-900 shadow-md ring-1 ring-ink-200">
+                        <Image
+                          key={currentSrc}
+                          src={currentSrc}
+                          alt={item.label}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 1024px) 100vw, 800px"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
+
+                        <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 pt-10 bg-gradient-to-t from-black/70 to-transparent flex items-end justify-between gap-3">
+                          <div>
+                            <p className="text-white font-black text-lg leading-tight drop-shadow">{item.label}</p>
+                            {item.isAmpliacion && (
+                              <span className="inline-block mt-1 text-[9px] font-black text-slate-200 bg-slate-700/60 border border-slate-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                Proyección / Ampliación
+                              </span>
+                            )}
+                            {item.isModel && !item.isAmpliacion && (
+                              <span className="inline-block mt-1 text-[9px] font-black text-emerald-300 bg-emerald-700/50 border border-emerald-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                Modelo de vivienda
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => setGalleryFullscreen(currentSrc)}
+                              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/30 backdrop-blur-sm text-white text-xs font-bold px-3 py-2 rounded-xl transition-all border border-white/25"
+                            >
+                              <FiMaximize2 size={12} /> Ampliar
+                            </button>
+                            <button
+                              onClick={() => setSelectedGallery(null)}
+                              className="bg-white/15 hover:bg-white/30 backdrop-blur-sm text-white p-2 rounded-xl transition-all border border-white/25"
+                              aria-label="Cerrar"
+                            >
+                              <FiX size={14} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Flechas entre items del gallery */}
+                        {galleryItems.length > 1 && (
+                          <>
+                            <button
+                              onClick={() => { setSelectedGallery(p => p === null ? 0 : p === 0 ? galleryItems.length - 1 : p - 1); setGallerySubIdx({}); }}
+                              className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2.5 rounded-full transition-all backdrop-blur-sm border border-white/10"
+                            >
+                              <FiChevronLeft size={18} />
+                            </button>
+                            <button
+                              onClick={() => { setSelectedGallery(p => p === null ? 0 : p === galleryItems.length - 1 ? 0 : p + 1); setGallerySubIdx({}); }}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2.5 rounded-full transition-all backdrop-blur-sm border border-white/10"
+                            >
+                              <FiChevronRight size={18} />
+                            </button>
+                          </>
+                        )}
+
+                        <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+                          {selectedGallery + 1} / {galleryItems.length}
+                        </div>
+                      </div>
+
+                      {/* Mini-selector de imágenes internas del item */}
+                      {hasMultiple && (
+                        <div className="flex gap-2 overflow-x-auto scrollbar-none px-1 pb-1">
+                          {item.imagenes.map((src, ii) => (
+                            <button
+                              key={ii}
+                              onClick={() => setGallerySubIdx(prev => ({ ...prev, [selectedGallery]: ii }))}
+                              className={`relative shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all ${
+                                ii === subIdx
+                                  ? 'border-horos-500 ring-2 ring-horos-200 opacity-100'
+                                  : 'border-transparent opacity-50 hover:opacity-80'
+                              }`}
+                            >
+                              <Image src={src} alt={`Vista ${ii + 1}`} fill className="object-cover" sizes="64px" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })() : (
+                  <div className="w-full aspect-[4/3] rounded-2xl bg-ink-50 border-2 border-dashed border-ink-200 flex flex-col items-center justify-center gap-3 text-ink-300">
+                    <div className="w-14 h-14 rounded-2xl bg-ink-100 flex items-center justify-center">
+                      <FiMaximize2 size={24} />
+                    </div>
+                    <p className="text-sm font-semibold text-ink-400">Selecciona una imagen para previsualizarla</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Panel derecho: Características + Formulario (1/3) */}
+              <div className="flex flex-col gap-3">
+
+                {/* Características dinámicas */}
+                {(() => {
+                  const activeSpecs = (selectedGallery !== null && galleryItems[selectedGallery]?.specs.length > 0)
+                    ? galleryItems[selectedGallery].specs
+                    : statItems;
+                  const activeLabel = selectedGallery !== null ? galleryItems[selectedGallery]?.label : null;
+                  return (
+                    <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
+                      <div className="px-5 pt-4 pb-3 border-b border-stone-100 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-1 h-5 bg-horos-500 rounded-full inline-block" />
+                          <h3 className="text-ink-900 font-black text-sm">Características</h3>
+                        </div>
+                        {activeLabel && (
+                          <span className="text-[10px] font-black text-horos-600 bg-horos-50 border border-horos-200 px-2 py-0.5 rounded-full truncate max-w-[50%]">
+                            {activeLabel}
+                          </span>
+                        )}
+                      </div>
+                      <div className="p-4 grid grid-cols-2 gap-2.5">
+                        {activeSpecs.map((item, i) => (
+                          <div key={`${activeLabel ?? 'base'}-${i}`}
+                            className="bg-stone-50 rounded-xl p-4 flex flex-col items-center gap-2 border border-stone-100 hover:border-horos-200 transition-colors animate-fade-in">
+                            <div className="text-horos-500 text-xl">{item.icon}</div>
+                            <p className="text-xl font-black text-ink-900 leading-none">{item.val}</p>
+                            <p className="text-[10px] text-ink-400 font-semibold uppercase tracking-wide text-center">{item.label}</p>
+                          </div>
+                        ))}
+                      </div>
+                      {selectedGallery !== null && galleryItems[selectedGallery]?.resumenAreas && galleryItems[selectedGallery].resumenAreas!.length > 0 && (
+                        <div className="mx-4 mb-4 rounded-xl border border-stone-200 overflow-hidden">
+                          <div className="bg-stone-800 px-3 py-2">
+                            <p className="text-stone-200 text-[10px] font-black uppercase tracking-widest">Resumen de áreas</p>
+                          </div>
+                          <div className="divide-y divide-stone-100">
+                            {galleryItems[selectedGallery].resumenAreas!.map((row, ri) => (
+                              <div key={ri} className={`flex items-center justify-between px-3 py-2 ${row.resaltar ? 'bg-horos-50' : 'bg-white'}`}>
+                                <span className={`text-xs ${row.resaltar ? 'font-black text-ink-800' : 'font-medium text-ink-500'}`}>{row.label}</span>
+                                <span className={`text-xs tabular-nums ${row.resaltar ? 'font-black text-horos-700' : 'font-semibold text-ink-700'}`}>{row.valor}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Formulario en tonos blancos */}
+                <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
+                  <div className="px-5 pt-4 pb-3 border-b border-stone-100">
+                    <p className="text-[10px] font-black text-horos-500 uppercase tracking-[0.25em]">Cotiza este proyecto</p>
+                  </div>
+                  <div className="p-4">
+                    {ctaEnviado ? (
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-5 text-center">
+                        <p className="text-emerald-700 font-black text-sm mb-1">¡Mensaje enviado!</p>
+                        <p className="text-emerald-500 text-xs">Te contactaremos pronto.</p>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleCtaSubmit} className="flex flex-col gap-2">
+                        <input type="text" placeholder="Tu nombre *"
+                          value={ctaForm.nombre} onChange={e => setCtaForm(p => ({ ...p, nombre: e.target.value }))} required
+                          className="w-full bg-stone-50 border border-stone-200 text-ink-900 placeholder-ink-400 text-sm px-4 py-2.5 rounded-xl focus:outline-none focus:border-horos-400 focus:bg-white transition-all" />
+                        <input type="tel" placeholder="Teléfono / celular *"
+                          value={ctaForm.telefono} onChange={e => setCtaForm(p => ({ ...p, telefono: e.target.value }))} required
+                          className="w-full bg-stone-50 border border-stone-200 text-ink-900 placeholder-ink-400 text-sm px-4 py-2.5 rounded-xl focus:outline-none focus:border-horos-400 focus:bg-white transition-all" />
+                        <textarea placeholder="¿Alguna consulta? (opcional)"
+                          value={ctaForm.mensaje} onChange={e => setCtaForm(p => ({ ...p, mensaje: e.target.value }))} rows={2}
+                          className="w-full bg-stone-50 border border-stone-200 text-ink-900 placeholder-ink-400 text-sm px-4 py-2.5 rounded-xl focus:outline-none focus:border-horos-400 focus:bg-white transition-all resize-none" />
+                        <label className="flex items-start gap-2 mt-1 cursor-pointer">
+                          <button type="button" onClick={() => setCtaTerminos(p => !p)}
+                            className={`mt-0.5 shrink-0 w-4 h-4 rounded border transition-all flex items-center justify-center ${
+                              ctaTerminos ? 'bg-horos-500 border-horos-500' : 'border-stone-300 bg-white hover:border-horos-400'
+                            }`}>
+                            {ctaTerminos && <FaCheck size={8} className="text-white" />}
+                          </button>
+                          <span className="text-ink-400 text-[10px] leading-relaxed">
+                            Acepto los{' '}
+                            <Link href="/terminos" className="text-horos-500 hover:text-horos-600 underline underline-offset-2">
+                              términos y condiciones
+                            </Link>{' '}
+                            y autorizo el tratamiento de mis datos personales.
+                          </span>
+                        </label>
+                        <button type="submit"
+                          disabled={!ctaTerminos || !ctaForm.nombre || !ctaForm.telefono}
+                          className="w-full flex items-center justify-center gap-2 bg-horos-600 hover:bg-horos-500 disabled:opacity-35 disabled:cursor-not-allowed active:scale-[0.98] text-white font-black py-3 px-4 rounded-xl text-sm transition-all mt-1">
+                          <FaWhatsapp size={15} /> Enviar por WhatsApp
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Film strip seleccionable */}
+            <div className="flex gap-2 overflow-x-auto scrollbar-none pt-4">
+              {galleryItems.map((item, i) => {
+                const isSelected = i === selectedGallery;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedGallery(isSelected ? null : i)}
+                    className={`group relative shrink-0 w-32 h-44 rounded-xl overflow-hidden transition-all duration-300 shadow-sm ${
+                      isSelected ? 'opacity-100 ring-2 ring-horos-500 ring-offset-2 ring-offset-stone-100 shadow-lg' : 'opacity-55 hover:opacity-80 hover:shadow-md'
+                    }`}
+                  >
+                    <Image
+                      src={item.imagenes[gallerySubIdx[i] ?? 0] ?? item.imagenes[0]}
+                      alt={item.label}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="128px"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-2.5">
+                      {item.isAmpliacion && (
+                        <p className="text-[8px] font-black text-horos-300 uppercase tracking-wider mb-0.5">Proyección</p>
+                      )}
+                      {item.isModel && !item.isAmpliacion && (
+                        <p className="text-[8px] font-black text-emerald-400 uppercase tracking-wider mb-0.5">Modelo</p>
+                      )}
+                      <p className="text-white font-black text-[11px] leading-tight">{item.label}</p>
+                    </div>
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-horos-500 flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+          </div>
+        </section>
+      )}
+
+      {/* ── Amenidades — sección cálida full-width ─────────────── */}
+      {Array.isArray(proyecto.caracteristicas) && proyecto.caracteristicas.length > 0 && (
+        <section className="bg-stone-50 border-y border-stone-200">
+          <div className="max-w-7xl mx-auto px-6 py-12">
+            <div className="mb-8">
+              <p className="text-horos-500 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Del proyecto</p>
+              <div className="flex items-baseline gap-3">
+                <h2 className="text-ink-900 font-black text-3xl lg:text-4xl uppercase tracking-tight leading-none">Amenidades</h2>
+                <span className="text-ink-400 font-light text-lg italic">y servicios</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+              {proyecto.caracteristicas.map((item, i) => (
+                <div key={i} className="flex flex-col items-center gap-3 bg-white border border-stone-200 rounded-2xl p-4 hover:border-horos-300 hover:shadow-lg transition-all group cursor-default">
+                  <div className="w-10 h-10 rounded-xl bg-horos-50 flex items-center justify-center text-horos-500 group-hover:bg-horos-100 group-hover:text-horos-600 transition-all">
+                    {getAmenityIcon(item)}
+                  </div>
+                  <span className="text-[10px] font-bold text-ink-600 group-hover:text-ink-900 text-center leading-tight">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Main content ────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        {/* ── Left column ─────────────────────────────────────── */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
 
           {(proyecto.entrega || proyecto.financiamiento || proyecto.amoblado) && (
-            <div className="bg-white rounded-2xl shadow-sm border border-ink-100 overflow-hidden">
-              <div className="px-6 pt-5 pb-4 border-b border-ink-50 flex items-center gap-2">
-                <span className="w-1 h-5 bg-horos-500 rounded-full inline-block" />
-                <h3 className="text-ink-900 font-black text-base">Condiciones del proyecto</h3>
-              </div>
-              <ul className="p-5 flex flex-col gap-3">
-                {proyecto.entrega && (
-                  <li className="flex items-center gap-3 text-sm text-ink-600">
-                    <div className="w-7 h-7 rounded-full bg-horos-50 flex items-center justify-center shrink-0">
-                      <FiCalendar className="text-horos-600" size={14} />
-                    </div>
-                    <span><strong className="text-ink-800">Entrega estimada:</strong> {proyecto.entrega}</span>
-                  </li>
-                )}
-                {proyecto.financiamiento && (
-                  <li className="flex items-center gap-3 text-sm text-ink-600">
-                    <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
-                      <FaCheck className="text-emerald-500" size={12} />
-                    </div>
-                    <span>
-                      Acepta <strong className="text-ink-800">financiamiento</strong>
-                      {proyecto.financiamiento_tipo ? ` — ${proyecto.financiamiento_tipo}` : ' bancario y MIVIVIENDA'}
-                    </span>
-                  </li>
-                )}
-                {proyecto.amoblado && (
-                  <li className="flex items-center gap-3 text-sm text-ink-600">
-                    <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
-                      <FaCheck className="text-emerald-500" size={12} />
-                    </div>
-                    <span>Se entrega <strong className="text-ink-800">amoblado</strong></span>
-                  </li>
-                )}
-              </ul>
+            <div className="flex flex-wrap gap-3">
+              {proyecto.entrega && (
+                <div className="flex items-center gap-2.5 bg-white border border-ink-100 rounded-2xl px-4 py-3 shadow-sm">
+                  <div className="w-8 h-8 rounded-xl bg-horos-50 flex items-center justify-center shrink-0">
+                    <FiCalendar className="text-horos-600" size={15} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-ink-400 font-semibold uppercase tracking-widest">Entrega</p>
+                    <p className="text-sm font-black text-ink-900">{proyecto.entrega}</p>
+                  </div>
+                </div>
+              )}
+              {proyecto.financiamiento && (
+                <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-3 shadow-sm">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+                    <FaCheck className="text-emerald-600" size={13} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-widest">Financiamiento</p>
+                    <p className="text-sm font-black text-emerald-900">{proyecto.financiamiento_tipo ?? 'Bancario / MIVIVIENDA'}</p>
+                  </div>
+                </div>
+              )}
+              {proyecto.amoblado && (
+                <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-3 shadow-sm">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+                    <FaCheck className="text-emerald-600" size={13} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-widest">Incluye</p>
+                    <p className="text-sm font-black text-emerald-900">Amoblado</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -691,40 +1008,21 @@ export default function FichaProyectoPage() {
             </div>
           )}
 
-          {Array.isArray(proyecto.caracteristicas) && proyecto.caracteristicas.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm border border-ink-100 overflow-hidden">
-              <div className="px-6 pt-5 pb-4 border-b border-ink-50 flex items-center gap-2">
-                <span className="w-1 h-5 bg-horos-500 rounded-full inline-block" />
-                <h3 className="text-ink-900 font-black text-base">Amenidades y servicios</h3>
-              </div>
-              <div className="p-5 flex flex-wrap gap-2">
-                {proyecto.caracteristicas.map((item, i) => (
-                  <span key={i} className="flex items-center gap-1.5 text-xs font-semibold text-horos-700 bg-horos-50 border border-horos-100 px-3 py-2 rounded-full hover:bg-horos-100 transition-colors">
-                    <FaCheck size={9} className="text-horos-500" />
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
 
           {proyecto.descripcion && (
-            <div className="bg-white rounded-2xl shadow-sm border border-ink-100 overflow-hidden">
-              <div className="px-6 pt-5 pb-4 border-b border-ink-50 flex items-center gap-2">
-                <span className="w-1 h-5 bg-horos-500 rounded-full inline-block" />
-                <h3 className="text-ink-900 font-black text-base">Descripción</h3>
-              </div>
-              <p className="p-5 text-ink-600 leading-relaxed text-sm whitespace-pre-line">
+            <div className="py-2">
+              <p className="text-horos-500 text-[10px] font-black uppercase tracking-[0.3em] mb-3">Sobre el inmueble</p>
+              <p className="text-ink-700 text-base leading-relaxed whitespace-pre-line border-l-2 border-horos-300 pl-5">
                 {proyecto.descripcion}
               </p>
             </div>
           )}
 
           {proyecto.video_url && (
-            <div className="bg-white rounded-2xl shadow-sm border border-ink-100 overflow-hidden">
-              <div className="px-6 pt-5 pb-4 border-b border-ink-50 flex items-center gap-2">
-                <span className="w-1 h-5 bg-horos-500 rounded-full inline-block" />
-                <h3 className="text-ink-900 font-black text-base">Tour virtual</h3>
+            <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.06)] overflow-hidden">
+              <div className="px-6 pt-6 pb-4">
+                <p className="text-horos-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Recorrido</p>
+                <h3 className="text-ink-900 font-black text-lg">Tour virtual</h3>
               </div>
               <div className="relative aspect-video w-full">
                 <iframe
@@ -738,33 +1036,31 @@ export default function FichaProyectoPage() {
             </div>
           )}
 
-          <div className="bg-white rounded-2xl shadow-sm border border-ink-100 overflow-hidden">
-            <div className="px-6 pt-5 pb-4 border-b border-ink-50 flex items-center gap-2">
-              <span className="w-1 h-5 bg-horos-500 rounded-full inline-block" />
+          <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.06)] overflow-hidden">
+            <div className="px-6 pt-6 pb-4 flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-ink-900 font-black text-base leading-tight">Localización</h3>
-                <p className="text-ink-400 text-xs mt-0.5">{proyecto.ubicacion}</p>
+                <p className="text-horos-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Ubicación</p>
+                <h3 className="text-ink-900 font-black text-lg leading-tight">Localización</h3>
               </div>
-            </div>
-
-            <div className="px-6 pt-2 pb-2 flex items-center gap-1.5">
-              <FiMapPin size={12} className="text-horos-500" />
-              <span className="text-xs font-bold text-ink-500 uppercase tracking-wide">Ubicación en Google Maps</span>
-            </div>
-            <div className="h-80">
-              <iframe src={proyecto.mapa_embed_src ?? mapaUrl} width="100%" height="100%"
-                className="border-0 w-full h-full" allowFullScreen loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title={`Ubicación de ${proyecto.titulo}`} />
-            </div>
-
-            <div className="px-6 py-3 bg-ink-50 border-t border-ink-100 flex items-center justify-end">
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(proyecto.ubicacion + ', Perú')}`}
                 target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs font-bold text-horos-600 hover:text-horos-700 hover:underline transition-colors">
-                <FiExternalLink size={12} /> Abrir en Google Maps
+                className="flex items-center gap-1.5 text-xs font-bold text-horos-600 hover:text-horos-700 bg-horos-50 hover:bg-horos-100 px-3 py-2 rounded-xl transition-all shrink-0">
+                <FiExternalLink size={12} /> Ver en Maps
               </a>
+            </div>
+            <p className="px-6 pb-3 flex items-center gap-1.5 text-xs text-ink-400 font-medium">
+              <FiMapPin size={11} className="text-horos-400 shrink-0" />
+              {proyecto.ubicacion}
+            </p>
+            <div className="h-72 mx-4 mb-4 rounded-2xl overflow-hidden">
+              <iframe
+                src={proyecto.mapa_embed_src ?? `https://maps.google.com/maps?q=${encodeURIComponent(proyecto.ubicacion + ', Perú')}&output=embed`}
+                width="100%" height="100%"
+                className="border-0 w-full h-full" allowFullScreen loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title={`Ubicación de ${proyecto.titulo}`}
+              />
             </div>
           </div>
         </div>
@@ -772,55 +1068,142 @@ export default function FichaProyectoPage() {
         {/* ── Right sidebar ────────────────────────────────────── */}
         <div className="flex flex-col gap-5">
 
-          <div className="bg-horos-950 text-white rounded-2xl shadow-lg p-6"
-            style={{ background: 'linear-gradient(160deg, #02303C 0%, #044A5C 100%)' }}>
+          {/* CTA card */}
+          <div className="rounded-3xl overflow-hidden shadow-xl"
+            style={{ background: 'linear-gradient(155deg, #011f28 0%, #02303C 45%, #034558 100%)' }}>
 
-            <span className={`inline-flex items-center text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded-full border mb-3 ${badge.cls}`}>
-              {badge.label}
-            </span>
-
-            <p className="text-horos-300/60 text-[10px] uppercase tracking-widest font-bold mb-1">
-              {proyecto.precio_desde ? 'Precio desde' : 'Precio del Inmueble'}
-            </p>
-            <p className="text-3xl font-black text-accent-400 mb-1 leading-none">
-              {proyecto.precio_desde && <span className="text-base font-semibold text-accent-300 mr-1">Desde</span>}
-              S/. {fmt(proyecto.precio)}
-            </p>
-
-            <div className="flex flex-wrap gap-2 mb-5 mt-2">
-              {proyecto.entrega && (
-                <span className="flex items-center gap-1 text-[11px] font-semibold text-horos-200 bg-white/8 px-2.5 py-1 rounded-full">
-                  <FiCalendar size={10} /> Entrega {proyecto.entrega}
-                </span>
-              )}
-              {proyecto.financiamiento && (
-                <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-                  <FaCheck size={9} /> {proyecto.financiamiento_tipo ?? 'Financiable'}
-                </span>
-              )}
+            {/* Top bar */}
+            <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-white/8">
+              <span className={`inline-flex items-center text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full ${badge.cls}`}>
+                {badge.label}
+              </span>
+              <span className="text-horos-400/60 text-[10px] font-bold uppercase tracking-widest">
+                #{proyecto.id.toString().slice(0, 6)}
+              </span>
             </div>
 
-            <div className="flex flex-col gap-3">
+            {/* Price */}
+            <div className="px-6 pt-5 pb-4 border-b border-white/8">
+              <p className="text-white/40 text-[10px] uppercase tracking-[0.2em] font-bold mb-1.5">
+                {proyecto.precio_desde ? 'Precio desde' : 'Precio'}
+              </p>
+              <div className="flex items-baseline gap-2 mb-4">
+                {proyecto.precio_desde && <span className="text-horos-300 text-sm font-semibold">Desde</span>}
+                <span className="text-4xl font-black text-white tracking-tight leading-none">S/. {fmt(proyecto.precio)}</span>
+              </div>
+
+              {/* Financiamiento / entrega chips con logos */}
+              <div className="flex flex-wrap gap-2">
+                {proyecto.entrega && (
+                  <span className="flex items-center gap-1.5 text-[11px] font-semibold text-white/80 bg-white/8 border border-white/10 px-3 py-1.5 rounded-full">
+                    <FiCalendar size={10} /> Entrega {proyecto.entrega}
+                  </span>
+                )}
+                {proyecto.financiamiento && (() => {
+                  const tipo = (proyecto.financiamiento_tipo ?? '').toUpperCase();
+                  const isFovime = tipo.includes('FOVIME');
+                  const isNeptuno = (proyecto.landing_proveedor ?? '').toLowerCase() === 'neptuno';
+                  return (
+                    <span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-300 bg-emerald-500/12 border border-emerald-500/25 px-2.5 py-1.5 rounded-full">
+                      <FaCheck size={9} />
+                      {isFovime ? (
+                        <Image src="/img/fovime-logo.png" alt="FOVIME" width={48} height={14} className="h-3.5 w-auto object-contain brightness-[5]" />
+                      ) : isNeptuno ? (
+                        <Image src="/img/neptuno-logo.png" alt="Neptuno" width={52} height={14} className="h-3.5 w-auto object-contain brightness-[5]" />
+                      ) : (
+                        proyecto.financiamiento_tipo ?? 'Financiable'
+                      )}
+                    </span>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Acciones rápidas */}
+            <div className="px-6 py-4 flex flex-col gap-2 border-b border-white/8">
               <a href={whatsappHref} target="_blank" rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20b858] text-white font-black py-3 px-4 rounded-xl text-sm transition-colors">
-                <FaWhatsapp size={16} /> Consultar por WhatsApp
+                className="w-full flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#22c45e] active:scale-[0.98] text-white font-black py-3.5 px-4 rounded-2xl text-sm transition-all shadow-lg shadow-green-900/20">
+                <FaWhatsapp size={17} /> Consultar por WhatsApp
               </a>
               <a href="tel:+51971000482"
-                className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/15 hover:bg-white/15 text-white font-bold py-3 px-4 rounded-xl text-sm transition-colors">
-                <FiPhone size={14} /> Llamar: 971 000 482
+                className="w-full flex items-center justify-center gap-2 bg-white/8 border border-white/12 hover:bg-white/14 active:scale-[0.98] text-white/90 font-semibold py-3 px-4 rounded-2xl text-sm transition-all">
+                <FiPhone size={14} /> 971 000 482
               </a>
-              <Link href="/contacto"
-                className="w-full flex items-center justify-center gap-2 bg-accent-500 hover:bg-accent-400 text-white font-black py-3 px-4 rounded-xl text-sm transition-colors">
-                Solicitar cotización
-              </Link>
+              {proyecto.enlace_mas_info && (
+                <a href={proyecto.enlace_mas_info} target="_blank" rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 border border-white/12 text-white/60 hover:bg-white/5 hover:text-white/80 py-2.5 px-4 rounded-2xl text-xs font-semibold transition-all">
+                  <FiExternalLink size={12} /> Ver información oficial
+                </a>
+              )}
             </div>
 
-            {proyecto.enlace_mas_info && (
-              <a href={proyecto.enlace_mas_info} target="_blank" rel="noopener noreferrer"
-                className="mt-4 w-full flex items-center justify-center gap-2 border border-horos-400/40 text-horos-300 hover:bg-horos-500/10 hover:border-horos-400 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all">
-                <FiExternalLink size={13} /> Ver más información oficial
-              </a>
-            )}
+            {/* Formulario de contacto */}
+            <div className="px-6 py-5">
+              <p className="text-white/40 text-[10px] uppercase tracking-[0.2em] font-bold mb-4">O déjanos tus datos</p>
+
+              {ctaEnviado ? (
+                <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-2xl px-4 py-5 text-center">
+                  <p className="text-emerald-300 font-black text-sm mb-1">¡Mensaje enviado!</p>
+                  <p className="text-emerald-400/70 text-xs">Te contactaremos a la brevedad.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleCtaSubmit} className="flex flex-col gap-2.5">
+                  <input
+                    type="text"
+                    placeholder="Tu nombre *"
+                    value={ctaForm.nombre}
+                    onChange={e => setCtaForm(p => ({ ...p, nombre: e.target.value }))}
+                    required
+                    className="w-full bg-white/8 border border-white/12 text-white placeholder-white/35 text-sm px-4 py-3 rounded-xl focus:outline-none focus:border-horos-400 focus:bg-white/12 transition-all"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Teléfono / celular *"
+                    value={ctaForm.telefono}
+                    onChange={e => setCtaForm(p => ({ ...p, telefono: e.target.value }))}
+                    required
+                    className="w-full bg-white/8 border border-white/12 text-white placeholder-white/35 text-sm px-4 py-3 rounded-xl focus:outline-none focus:border-horos-400 focus:bg-white/12 transition-all"
+                  />
+                  <textarea
+                    placeholder="¿Alguna consulta? (opcional)"
+                    value={ctaForm.mensaje}
+                    onChange={e => setCtaForm(p => ({ ...p, mensaje: e.target.value }))}
+                    rows={2}
+                    className="w-full bg-white/8 border border-white/12 text-white placeholder-white/35 text-sm px-4 py-3 rounded-xl focus:outline-none focus:border-horos-400 focus:bg-white/12 transition-all resize-none"
+                  />
+
+                  {/* T&C */}
+                  <label className="flex items-start gap-2.5 cursor-pointer mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setCtaTerminos(p => !p)}
+                      className={`mt-0.5 shrink-0 w-4 h-4 rounded border transition-all flex items-center justify-center ${
+                        ctaTerminos
+                          ? 'bg-horos-500 border-horos-500'
+                          : 'border-white/25 bg-white/8 hover:border-white/40'
+                      }`}
+                    >
+                      {ctaTerminos && <FaCheck size={8} className="text-white" />}
+                    </button>
+                    <span className="text-white/45 text-[10px] leading-relaxed">
+                      Acepto los{' '}
+                      <Link href="/terminos" className="text-horos-300 hover:text-horos-200 underline underline-offset-2">
+                        términos y condiciones
+                      </Link>{' '}
+                      y autorizo el tratamiento de mis datos personales.
+                    </span>
+                  </label>
+
+                  <button
+                    type="submit"
+                    disabled={!ctaTerminos || !ctaForm.nombre || !ctaForm.telefono}
+                    className="w-full flex items-center justify-center gap-2 bg-horos-500 hover:bg-horos-400 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] text-white font-black py-3.5 px-4 rounded-2xl text-sm transition-all mt-1"
+                  >
+                    <FaWhatsapp size={15} /> Enviar por WhatsApp
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
 
           {/* Landing embebido */}
@@ -847,11 +1230,12 @@ export default function FichaProyectoPage() {
           )}
 
           {/* Ficha técnica */}
-          <div className="bg-white rounded-2xl shadow-sm border border-ink-100 p-5">
-            <p className="text-horos-600 text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <FaBuilding size={10} /> Ficha técnica
-            </p>
-
+          <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.06)] overflow-hidden">
+          <div className="px-5 pt-5 pb-4 border-b border-ink-50">
+            <p className="text-horos-500 text-[10px] font-black uppercase tracking-[0.2em] mb-0.5">Documento</p>
+            <h3 className="text-ink-900 font-black text-base">Ficha técnica</h3>
+          </div>
+          <div className="p-5">
             <div className="flex flex-col gap-2">
               <button onClick={() => generarFichaPDF(proyecto)}
                 className="w-full flex items-center justify-center gap-2 text-sm font-bold text-white bg-horos-600 hover:bg-horos-500 active:scale-95 py-2.5 px-4 rounded-xl transition-all">
@@ -924,6 +1308,7 @@ export default function FichaProyectoPage() {
                 <span className="font-mono text-xs font-semibold text-ink-600">#{proyecto.id.toString().slice(0, 8)}</span>
               </li>
             </ul>
+          </div>
           </div>
 
         </div>
@@ -1016,6 +1401,30 @@ export default function FichaProyectoPage() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Fullscreen galería ──────────────────────────────────── */}
+      {galleryFullscreen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+          onClick={() => setGalleryFullscreen(null)}
+        >
+          <button
+            className="absolute top-5 right-5 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-all z-10"
+            onClick={() => setGalleryFullscreen(null)}
+          >
+            <FiX size={20} />
+          </button>
+          <div className="relative w-full max-w-5xl h-[90vh] px-10" onClick={e => e.stopPropagation()}>
+            <Image
+              src={galleryFullscreen}
+              alt="Vista ampliada"
+              fill
+              className="object-contain"
+              sizes="(max-width: 1280px) 100vw, 1280px"
+            />
+          </div>
         </div>
       )}
 

@@ -32,6 +32,7 @@ interface ModeloCrudItem {
     area: string;
     pisos: string;
     imagenes: ImagenItem[];
+    resumen_areas: { label: string; valor: string; resaltar: boolean }[];
   };
 }
 
@@ -48,7 +49,7 @@ const MODELO_VACIO = (): ModeloCrudItem => ({
   banos: '',
   portada: null,
   imagenes: [],
-  ampliacion: { descripcion: '', area: '', pisos: '', imagenes: [] },
+  ampliacion: { descripcion: '', area: '', pisos: '', imagenes: [], resumen_areas: [] },
 });
 
 const MAX_IMAGENES = 8;
@@ -387,6 +388,27 @@ export default function PanelAsesores() {
     ));
   };
 
+  const handleAddResumenArea = (modeloIdx: number) => {
+    setModelosCrud(prev => prev.map((m, i) =>
+      i === modeloIdx
+        ? { ...m, ampliacion: { ...m.ampliacion, resumen_areas: [...m.ampliacion.resumen_areas, { label: '', valor: '', resaltar: false }] } }
+        : m
+    ));
+  };
+  const handleUpdateResumenArea = (modeloIdx: number, rowIdx: number, field: 'label' | 'valor' | 'resaltar', value: string | boolean) => {
+    setModelosCrud(prev => prev.map((m, i) => {
+      if (i !== modeloIdx) return m;
+      const rows = m.ampliacion.resumen_areas.map((r, ri) => ri === rowIdx ? { ...r, [field]: value } : r);
+      return { ...m, ampliacion: { ...m.ampliacion, resumen_areas: rows } };
+    }));
+  };
+  const handleRemoveResumenArea = (modeloIdx: number, rowIdx: number) => {
+    setModelosCrud(prev => prev.map((m, i) => {
+      if (i !== modeloIdx) return m;
+      return { ...m, ampliacion: { ...m.ampliacion, resumen_areas: m.ampliacion.resumen_areas.filter((_, ri) => ri !== rowIdx) } };
+    }));
+  };
+
   const handleMoverItem = (
     items: ImagenItem[],
     setItems: React.Dispatch<React.SetStateAction<ImagenItem[]>>,
@@ -554,11 +576,12 @@ export default function PanelAsesores() {
           banos: mc.banos ? parseInt(mc.banos) : undefined,
           portada: mc.portada ? (await subirItems([mc.portada]))[0] : undefined,
           imagenes: await subirItems(mc.imagenes),
-          ampliacion: mc.ampliacion.imagenes.length > 0 || mc.ampliacion.descripcion || mc.ampliacion.area || mc.ampliacion.pisos ? {
+          ampliacion: mc.ampliacion.imagenes.length > 0 || mc.ampliacion.descripcion || mc.ampliacion.area || mc.ampliacion.pisos || mc.ampliacion.resumen_areas.length > 0 ? {
             descripcion: mc.ampliacion.descripcion || undefined,
             area: mc.ampliacion.area ? parseFloat(mc.ampliacion.area) : undefined,
             pisos: mc.ampliacion.pisos ? parseInt(mc.ampliacion.pisos) : undefined,
             imagenes: await subirItems(mc.ampliacion.imagenes),
+            resumen_areas: mc.ampliacion.resumen_areas.filter(r => r.label || r.valor).map(r => ({ label: r.label, valor: r.valor, resaltar: r.resaltar || undefined })),
           } : undefined,
         })));
       }
@@ -639,6 +662,7 @@ export default function PanelAsesores() {
           area: md.ampliacion?.area?.toString() || '',
           pisos: md.ampliacion?.pisos?.toString() || '',
           imagenes: (md.ampliacion?.imagenes || []).map(url => ({ src: url })),
+          resumen_areas: (md.ampliacion?.resumen_areas || []).map(r => ({ label: r.label, valor: r.valor, resaltar: r.resaltar ?? false })),
         },
       })));
     } else {
@@ -1827,6 +1851,51 @@ export default function PanelAsesores() {
                                   <textarea rows={2} placeholder="Ej. Proyección a 2 pisos adicionales con terraza..."
                                     className="border border-slate-200 rounded-lg py-1.5 px-3 text-sm outline-none resize-none focus:ring-2 focus:ring-amber-400"
                                     value={mc.ampliacion.descripcion} onChange={e => handleUpdateAmpliacion(mi, 'descripcion', e.target.value)} />
+                                </div>
+
+                                {/* Resumen de áreas */}
+                                <div className="mb-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Resumen de áreas</label>
+                                    <button type="button" onClick={() => handleAddResumenArea(mi)}
+                                      className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg hover:bg-amber-100 transition-colors">
+                                      <FiPlus size={10} /> Agregar fila
+                                    </button>
+                                  </div>
+                                  {mc.ampliacion.resumen_areas.length === 0 && (
+                                    <p className="text-[10px] text-slate-400 italic">Ej: "Área techada inicial → 37.60 m²", "Área total → 101.56 m²"</p>
+                                  )}
+                                  <div className="flex flex-col gap-1.5">
+                                    {mc.ampliacion.resumen_areas.map((row, ri) => (
+                                      <div key={ri} className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border ${row.resaltar ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
+                                        <input
+                                          type="text"
+                                          placeholder="Ej. Área techada total"
+                                          className="flex-1 bg-transparent text-xs outline-none text-slate-700 placeholder-slate-300"
+                                          value={row.label}
+                                          onChange={e => handleUpdateResumenArea(mi, ri, 'label', e.target.value)}
+                                        />
+                                        <span className="text-slate-300 text-xs">:</span>
+                                        <input
+                                          type="text"
+                                          placeholder="101.56 m²"
+                                          className="w-24 bg-transparent text-xs outline-none text-slate-700 placeholder-slate-300 text-right"
+                                          value={row.valor}
+                                          onChange={e => handleUpdateResumenArea(mi, ri, 'valor', e.target.value)}
+                                        />
+                                        <button type="button"
+                                          title="Resaltar fila"
+                                          onClick={() => handleUpdateResumenArea(mi, ri, 'resaltar', !row.resaltar)}
+                                          className={`text-[9px] font-black px-1.5 py-0.5 rounded border transition-colors ${row.resaltar ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-400 border-slate-200 hover:border-amber-300'}`}>
+                                          B
+                                        </button>
+                                        <button type="button" onClick={() => handleRemoveResumenArea(mi, ri)}
+                                          className="text-slate-300 hover:text-red-400 transition-colors">
+                                          <FiX size={13} />
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                                 <div className="border-2 border-dashed border-amber-200 rounded-lg p-3 bg-amber-50 hover:border-amber-400 transition-colors">
                                   <input type="file" accept="image/*"
